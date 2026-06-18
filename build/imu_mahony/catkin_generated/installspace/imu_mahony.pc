@@ -1,0 +1,8 @@
+prefix=/home/yu/catkin_workspace/install
+
+Name: imu_mahony
+Description: Description of imu_mahony
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: nlink_parser

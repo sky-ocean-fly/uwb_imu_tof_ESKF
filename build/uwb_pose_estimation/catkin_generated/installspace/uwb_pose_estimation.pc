@@ -1,0 +1,8 @@
+prefix=/home/yu/catkin_workspace/install
+
+Name: uwb_pose_estimation
+Description: Description of uwb_pose_estimation
+Version: 0.0.1
+Cflags: -I${prefix}/include
+Libs: -L${prefix}/lib 
+Requires: nlink_parser

@@ -1,0 +1,14 @@
+<launch>
+  <!-- ============================================================
+       UWB 同步记录 Launch 文件
+       当 /nlink_linktrack_nodeframe2 发布时，同步记录
+       /nlink_linktrack_nodeframe2 和 /ground_distance 到 CSV 文件
+       ============================================================ -->
+
+  <!-- UWB 同步记录节点 -->
+  <node pkg="imu_mahony" type="uwb_sync_recorder" name="uwb_sync_recorder" output="screen">
+    <param name="uwb_topic"    type="str" value="/nlink_linktrack_nodeframe2" />
+    <param name="ground_topic" type="str" value="/ground_distance" />
+    <param name="output_file"  type="str" value="$(find imu_mahony)/result/uwb_sync_record.csv" />
+  </node>
+</launch>

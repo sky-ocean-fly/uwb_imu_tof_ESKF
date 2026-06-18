@@ -1,0 +1,4 @@
+<launch>
+  <!-- UWB定位节点 -->
+  <node pkg="uwb_pose_estimation" type="uwb_pose_estimation_node" name="uwb_localization_node" output="screen" />
+</launch>

@@ -1,0 +1,28 @@
+<launch>
+  <!-- ============================================================
+       地面距离解算 Launch 文件
+       同时启动 ToF 传感器、IMU Mahony 和地面距离解算节点
+       ============================================================ -->
+
+  <!-- ToF 多像素传感器 (Nooploop Tofsense-M) -->
+  <node pkg="nlink_parser" type="tofsensem" name="tofsensem0" output="screen">
+    <param name="port_name" type="str" value="/dev/ttyUSB0" />
+    <param name="baud_rate" type="int" value="921600" />
+  </node>
+
+  <!-- IMU Mahony 姿态解算 (根据实际 IMU topic 修改 imu_topic 参数) -->
+  <node pkg="imu_mahony" type="imu_node" name="imu_mahony_node" output="screen">
+    <param name="imu_topic" type="str" value="/mynteye/imu/data_raw" />
+    <param name="rpy_topic" type="str" value="/imu/rpy" />
+    <param name="kp" type="double" value="1.0" />
+    <param name="ki" type="double" value="0.01" />
+  </node>
+
+  <!-- 地面距离解算节点 -->
+  <node pkg="imu_mahony" type="ground_distance_node" name="ground_distance_node" output="screen">
+    <param name="tof_topic"          type="str" value="/nlink_tofsensem_frame0" />
+    <param name="rpy_topic"          type="str" value="/imu/rpy" />
+    <param name="ground_topic"       type="str" value="/ground_distance" />
+    <param name="middle_pixel_index" type="int" value="7" />
+  </node>
+</launch>
