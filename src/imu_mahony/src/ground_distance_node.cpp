@@ -132,7 +132,7 @@ private:
         float pitch_rad = pitch_ * static_cast<float>(M_PI / 180.0);
 
         // ToF 距离: mm -> m
-        float tof_dis_m = last_tof_dis_mm_ / 1000.0f;
+        float tof_dis_m = last_tof_dis_mm_ / 1000.0f - 0.061 + 0.05; //静态真实值要加6.1cm，但不知道为什么动捕要5cm
 
         // 垂直地面距离: d * cos(pitch) * cos(roll)
         float vertical_height = tof_dis_m *

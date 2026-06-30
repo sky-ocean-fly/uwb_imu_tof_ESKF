@@ -121,12 +121,76 @@ public:
     
 };
 
+struct CoordinatePrepResult {
+    std::vector<Eigen::Vector3d> node_B;    // 标签在B坐标系下的位置
+    std::vector<Eigen::Vector3d> anchor_A;  // 基站在A坐标系下的位置
+    Eigen::Vector3d tof_B;                  // ToF在B坐标系下的位置
+
+    Eigen::Matrix3d R_W_B;                  // 如果无动捕初始化，用标签几何构造出的 ^W_B R
+    Eigen::Vector3d p_W_B0;                 // 如果无动捕初始化，用标签几何构造出的 ^W P_B0
+};
+
+//情况二：没有初始化 BM 动捕数据，用 4 个标签构造 B 坐标系
+struct BFrameFromTagsResult {
+    Eigen::Matrix3d R_W_B;
+    Eigen::Vector3d p_W_B0;
+    std::vector<Eigen::Vector3d> node_B;
+};
+
 std::vector<std::string> parseCSVLine(const std::string& line);
 
 std::map<int, std::map<int, std::vector<double>>> Extract_Data_from_file(std::string filename);
 
 double Calculate_positive_bias(int x,int y);
 
-std::vector<double> extractFieldYEvery10Rows(const std::string& filename);
+Eigen::Matrix4d makeT(const Eigen::Matrix3d& R,
+                      const Eigen::Vector3d& t);
+                    
+Eigen::Matrix4d inverseT(const Eigen::Matrix4d& T);
+
+std::vector<Eigen::Vector3d> transformPoints(
+    const std::vector<Eigen::Vector3d>& points_from,
+    const Eigen::Matrix3d& R_to_from,
+    const Eigen::Vector3d& t_to_from = Eigen::Vector3d::Zero());
+
+static Eigen::Matrix3d makeR_W_M();
+
+static Eigen::Matrix3d makeR_BM_B();
+
+static Eigen::Matrix3d makeR_AM_A();
+
+Eigen::Vector3d pointM_to_pointB_WithInitBM(
+    const Eigen::Vector3d& p_M,
+    const Eigen::Matrix3d& R_M_BM0,
+    const Eigen::Vector3d& p_M_BM0,
+    const Eigen::Matrix3d& R_BM_B);
+
+Eigen::Vector3d pointM_to_pointA_WithInitAM(
+    const Eigen::Vector3d& p_M,
+    const Eigen::Matrix3d& R_M_AM0,
+    const Eigen::Vector3d& p_M_AM0,
+    const Eigen::Matrix3d& R_AM_A);
+
+BFrameFromTagsResult buildBFrameFromTagsInW(
+    const std::vector<Eigen::Vector3d>& node_W);
+
+CoordinatePrepResult prepareCoordinatesForPoseEstimation(
+    bool use_init_mocap_data,
+
+    const std::vector<Eigen::Vector3d>& node_M,
+    const std::vector<Eigen::Vector3d>& anchor_M,
+    const Eigen::Vector3d& tof_M,
+
+    // 初始化时刻 BM 相对 M 的位姿
+    const Eigen::Matrix3d& R_M_BM0,
+    const Eigen::Vector3d& p_M_BM0,
+
+    // 初始化时刻 AM 相对 M 的位姿
+    const Eigen::Matrix3d& R_M_AM0,
+    const Eigen::Vector3d& p_M_AM0);
+
+Eigen::Matrix4d computeMocapTruth_T_A_B_AssumeMEqualsAM(
+    const Eigen::Matrix3d& R_M_BM,
+    const Eigen::Vector3d& p_M_BM);
 
 #endif

@@ -431,71 +431,339 @@ double Calculate_positive_bias(int x,int y)
     return Bias;
 }
 
-//之前斜距更新有问题，帧率是IMU_raw、ToF之和
-std::vector<double> extractFieldYEvery10Rows(const std::string& filename) 
+//构造齐次坐标变换矩阵
+Eigen::Matrix4d makeT(const Eigen::Matrix3d& R,
+                      const Eigen::Vector3d& t)
 {
-    std::vector<double> result;
-    std::ifstream file(filename);
-    
-    if (!file.is_open()) {
-        std::cerr << "无法打开文件: " << filename << std::endl;
-        return result;
+    Eigen::Matrix4d T = Eigen::Matrix4d::Identity();
+    T.block<3, 3>(0, 0) = R;
+    T.block<3, 1>(0, 3) = t;
+    return T;
+}
+
+//求齐次坐标变换矩阵的逆
+Eigen::Matrix4d inverseT(const Eigen::Matrix4d& T)
+{
+    Eigen::Matrix3d R = T.block<3, 3>(0, 0);
+    Eigen::Vector3d t = T.block<3, 1>(0, 3);
+
+    Eigen::Matrix4d T_inv = Eigen::Matrix4d::Identity();
+    T_inv.block<3, 3>(0, 0) = R.transpose();
+    T_inv.block<3, 1>(0, 3) = -R.transpose() * t;
+
+    return T_inv;
+}
+
+/**
+ * @brief 对点集做旋转+平移变换
+ *        p_to = R_to_from * p_from + t_to_from
+ */
+std::vector<Eigen::Vector3d> transformPoints(
+    const std::vector<Eigen::Vector3d> & points_from,
+    const Eigen::Matrix3d& R_to_from,
+    const Eigen::Vector3d& t_to_from)
+{
+    std::vector<Eigen::Vector3d> points_to;
+    points_to.reserve(points_from.size());
+
+    for(const auto& p : points_from)
+    {
+        points_to.push_back(R_to_from * p + t_to_from);
     }
-    
-    // 读取标题行
-    std::string headerLine;
-    if (!std::getline(file, headerLine)) {
-        std::cerr << "文件为空或无法读取标题" << std::endl;
-        return result;
+
+    return points_to;
+}
+
+static Eigen::Matrix3d makeR_W_M()
+{
+    Eigen::Matrix3d R;
+    R <<  0,  0, -1,
+         -1,  0,  0,
+          0,  1,  0;
+    return R;
+}
+
+static Eigen::Matrix3d makeR_BM_B()
+{
+    Eigen::Matrix3d R;
+    R <<  0, -1,  0,
+          0,  0,  1,
+         -1,  0,  0;
+    return R;
+}
+
+static Eigen::Matrix3d makeR_AM_A()
+{
+    Eigen::Matrix3d R;
+    R <<  0, -1,  0,
+          0,  0,  1,
+         -1,  0,  0;
+    return R;
+}
+
+/**
+ * @brief 使用动捕已知的 BM 坐标系定义，计算标签在 B 坐标系下的坐标
+ *
+ * 输入：
+ *   p_M    : 单个标签在动捕坐标系 M 下的坐标
+ *   R_M_BM     : BM坐标系到M坐标系的旋转，即 ^M_BM R
+ *   p_M_BM0    : BM坐标系原点在M坐标系下的位置，即 ^M P_BM0
+ *   R_BM_B     : B坐标系到BM坐标系的旋转，即 ^BM_B R
+ *
+ * 输出：
+ *   p_B    : 单个标签在标签坐标系 B 下的坐标
+ */
+Eigen::Vector3d pointM_to_pointB_WithInitBM(
+    const Eigen::Vector3d& p_M,
+    const Eigen::Matrix3d& R_M_BM0,
+    const Eigen::Vector3d& p_M_BM0,
+    const Eigen::Matrix3d& R_BM_B)
+{
+    // M -> BM
+    Eigen::Vector3d p_BM = R_M_BM0.transpose() * (p_M - p_M_BM0);
+
+    // BM -> B
+    Eigen::Vector3d p_B = R_BM_B.transpose() * p_BM;
+
+    return p_B;
+}
+
+//M->A
+Eigen::Vector3d pointM_to_pointA_WithInitAM(
+    const Eigen::Vector3d& p_M,
+    const Eigen::Matrix3d& R_M_AM0,
+    const Eigen::Vector3d& p_M_AM0,
+    const Eigen::Matrix3d& R_AM_A)
+{
+    // M -> AM
+    Eigen::Vector3d p_AM = R_M_AM0.transpose() * (p_M - p_M_AM0);
+
+    // AM -> A
+    Eigen::Vector3d p_A = R_AM_A.transpose() * p_AM;
+
+    return p_A;
+}
+
+/**
+ * @brief 根据4个标签在W系下的位置，构建标签坐标系B，并求标签在B系下坐标
+ *
+ * B系定义：
+ *   原点：4个标签中心
+ *   x轴：标签6 -> 标签8
+ *   y轴：标签7 -> 标签5
+ *   z轴：右手系 x × y
+ */
+BFrameFromTagsResult buildBFrameFromTagsInW(
+    const std::vector<Eigen::Vector3d>& node_W)
+{
+    if (node_W.size() != 4) {
+        throw std::runtime_error("node_W must contain exactly 4 tags: tag5, tag6, tag7, tag8.");
     }
-    
-    // 解析标题行，找到 field.y 的列索引
-    std::stringstream ss(headerLine);
-    std::string field;
-    int colIndex = -1;
-    int currentCol = 0;
-    
-    while (std::getline(ss, field, ',')) {
-        if (field == "field.y") {
-            colIndex = currentCol;
-            break;
+
+    // TAG_IDS = {5, 6, 7, 8}
+    const Eigen::Vector3d& p5_W = node_W[0];
+    const Eigen::Vector3d& p6_W = node_W[1];
+    const Eigen::Vector3d& p7_W = node_W[2];
+    const Eigen::Vector3d& p8_W = node_W[3];
+
+    // 1. B系原点：4个标签中心
+    Eigen::Vector3d p_W_B0 = Eigen::Vector3d::Zero();
+    for (const auto& p : node_W) {
+        p_W_B0 += p;
+    }
+    p_W_B0 /= 4.0;
+
+    // 2. x轴：标签6 -> 标签8
+    Eigen::Vector3d x_axis_W = (p8_W - p6_W).normalized();
+
+    // 3. y轴临时方向：标签7 -> 标签5
+    Eigen::Vector3d y_temp_W = (p5_W - p7_W).normalized();
+
+    // 4. z轴：右手系 z = x × y
+    Eigen::Vector3d z_axis_W = x_axis_W.cross(y_temp_W).normalized();
+
+    // 5. 重新正交化 y轴，保证旋转矩阵正交
+    Eigen::Vector3d y_axis_W = z_axis_W.cross(x_axis_W).normalized();
+
+    // 6. 构造 ^W_B R
+    Eigen::Matrix3d R_W_B;
+    R_W_B.col(0) = x_axis_W;
+    R_W_B.col(1) = y_axis_W;
+    R_W_B.col(2) = z_axis_W;
+
+    // 7. W -> B
+    std::vector<Eigen::Vector3d> node_B;
+    node_B.reserve(node_W.size());
+
+    for (const auto& p_W : node_W) {
+        Eigen::Vector3d p_B = R_W_B.transpose() * (p_W - p_W_B0);
+        node_B.push_back(p_B);
+    }
+
+    return {R_W_B, p_W_B0, node_B};
+}
+
+CoordinatePrepResult prepareCoordinatesForPoseEstimation(
+    bool use_init_mocap_data,
+
+    const std::vector<Eigen::Vector3d>& node_M,
+    const std::vector<Eigen::Vector3d>& anchor_M,
+    const Eigen::Vector3d& tof_M,
+
+    // 初始化时刻 BM 相对 M 的位姿
+    const Eigen::Matrix3d& R_M_BM0,
+    const Eigen::Vector3d& p_M_BM0,
+
+    // 初始化时刻 AM 相对 M 的位姿
+    const Eigen::Matrix3d& R_M_AM0,
+    const Eigen::Vector3d& p_M_AM0)
+{
+    CoordinatePrepResult result;
+
+    const Eigen::Matrix3d R_W_M  = makeR_W_M();
+    const Eigen::Matrix3d R_BM_B = makeR_BM_B();
+    const Eigen::Matrix3d R_AM_A = makeR_AM_A();
+
+    // ============================================================
+    // 1. 先处理基站：ANCHOR_M -> ANCHOR_A
+    // ============================================================
+    result.anchor_A.reserve(anchor_M.size());
+
+    if (use_init_mocap_data) {
+        // 有 AM 初始化数据：M -> AM -> A
+        for (const auto& p_M : anchor_M) {
+            Eigen::Vector3d p_A =
+                pointM_to_pointA_WithInitAM(
+                    p_M,
+                    R_M_AM0,
+                    p_M_AM0,
+                    R_AM_A
+                );
+
+            result.anchor_A.push_back(p_A);
         }
-        currentCol++;
-    }
-    
-    if (colIndex == -1) {
-        std::cerr << "未找到 field.y 列" << std::endl;
-        return result;
-    }
-    
-    // 读取数据行，每隔10行提取一次
-    std::string line;
-    int lineCount = 0;  // 从0开始计数，第0行、第10行、第20行...被提取
-    
-    while (std::getline(file, line)) {
-        if (line.empty()) continue;
-        
-        if (lineCount % 10 == 0) {
-            std::stringstream lineSs(line);
-            std::string value;
-            int col = 0;
-            
-            while (std::getline(lineSs, value, ',')) {
-                if (col == colIndex) {
-                    try {
-                        double yValue = std::stod(value);
-                        result.push_back(yValue);
-                    } catch (const std::exception& e) {
-                        std::cerr << "第 " << (lineCount + 2) << " 行 field.y 值格式错误: " << value << std::endl;
-                    }
-                    break;
-                }
-                col++;
-            }
+    } else {
+        // 没有 AM 初始化数据：假设 M 与 AM 重合
+        // 即 R_M_AM0 = I, p_M_AM0 = 0
+        for (const auto& p_M : anchor_M) {
+            Eigen::Vector3d p_AM = p_M;
+            Eigen::Vector3d p_A = R_AM_A.transpose() * p_AM;
+            result.anchor_A.push_back(p_A);
         }
-        lineCount++;
     }
-    
-    file.close();
+
+    // ============================================================
+    // 2. 再处理标签和TOF：NODE_M / TOF_M -> NODE_B / TOF_B
+    // ============================================================
+    if (use_init_mocap_data) {
+        // 有 BM 初始化数据：M -> BM -> B
+        result.node_B.reserve(node_M.size());
+
+        for (const auto& p_M : node_M) {
+            Eigen::Vector3d p_B =
+                pointM_to_pointB_WithInitBM(
+                    p_M,
+                    R_M_BM0,
+                    p_M_BM0,
+                    R_BM_B
+                );
+
+            result.node_B.push_back(p_B);
+        }
+
+        result.tof_B =
+            pointM_to_pointB_WithInitBM(
+                tof_M,
+                R_M_BM0,
+                p_M_BM0,
+                R_BM_B
+            );
+
+        result.R_W_B = Eigen::Matrix3d::Identity();
+        result.p_W_B0 = Eigen::Vector3d::Zero();
+    } else {
+        // 没有 BM 初始化数据：
+        // NODE_M -> NODE_W，然后利用4个标签构造B系
+        std::vector<Eigen::Vector3d> node_W;
+        node_W.reserve(node_M.size());
+
+        for (const auto& p_M : node_M) {
+            Eigen::Vector3d p_W = R_W_M * p_M;
+            node_W.push_back(p_W);
+        }
+
+        Eigen::Vector3d tof_W = R_W_M * tof_M;
+
+        BFrameFromTagsResult b_frame = buildBFrameFromTagsInW(node_W);
+
+        result.R_W_B = b_frame.R_W_B;
+        result.p_W_B0 = b_frame.p_W_B0;
+        result.node_B = b_frame.node_B;
+
+        // TOF_W -> TOF_B
+        result.tof_B =
+            result.R_W_B.transpose() * (tof_W - result.p_W_B0);
+    }
+
     return result;
+}
+
+//用实时动捕真值评估相对位姿
+Eigen::Matrix4d computeMocapTruth_T_A_B(
+    const Eigen::Matrix3d& R_M_BM,
+    const Eigen::Vector3d& p_M_BM,
+    const Eigen::Matrix3d& R_M_AM,
+    const Eigen::Vector3d& p_M_AM)
+{
+    const Eigen::Matrix3d R_BM_B = makeR_BM_B();
+    const Eigen::Matrix3d R_AM_A = makeR_AM_A();
+
+    // ^M_BM T
+    Eigen::Matrix4d T_M_BM = makeT(R_M_BM, p_M_BM);
+
+    // ^BM_B T
+    Eigen::Matrix4d T_BM_B = makeT(R_BM_B, Eigen::Vector3d::Zero());
+
+    // ^M_AM T
+    Eigen::Matrix4d T_M_AM = makeT(R_M_AM, p_M_AM);
+
+    // ^AM_A T
+    Eigen::Matrix4d T_AM_A = makeT(R_AM_A, Eigen::Vector3d::Zero());
+
+    // ^A_AM T = inverse(^AM_A T)
+    Eigen::Matrix4d T_A_AM = inverseT(T_AM_A);
+
+    // ^AM_M T = inverse(^M_AM T)
+    Eigen::Matrix4d T_AM_M = inverseT(T_M_AM);
+
+    // ^A_B T = ^A_AM T * ^AM_M T * ^M_BM T * ^BM_B T
+    Eigen::Matrix4d T_A_B =
+        T_A_AM * T_AM_M * T_M_BM * T_BM_B;
+
+    return T_A_B;
+}
+
+/**
+ * @brief 假设 M 与 AM 重合时，根据实时动捕求真值 ^A_B T
+ *
+ * ^A_B T = ^A_AM T * ^AM_M T * ^M_BM T * ^BM_B T
+ * 其中 M = AM，所以 ^AM_M T = I
+ */
+Eigen::Matrix4d computeMocapTruth_T_A_B_AssumeMEqualsAM(
+    const Eigen::Matrix3d& R_M_BM,
+    const Eigen::Vector3d& p_M_BM)
+{
+    Eigen::Matrix3d R_AM_A = makeR_AM_A();
+    Eigen::Matrix3d R_BM_B = makeR_BM_B();
+
+    Eigen::Matrix4d T_M_BM = makeT(R_M_BM, p_M_BM);
+    Eigen::Matrix4d T_BM_B = makeT(R_BM_B, Eigen::Vector3d::Zero());
+
+    Eigen::Matrix4d T_AM_A = makeT(R_AM_A, Eigen::Vector3d::Zero());
+    Eigen::Matrix4d T_A_AM = inverseT(T_AM_A);
+
+    // M = AM，所以 ^AM_M T = I
+    Eigen::Matrix4d T_A_B = T_A_AM * T_M_BM * T_BM_B;
+
+    return T_A_B;
 }
