@@ -68,49 +68,17 @@ install/strip/fast: preinstall/fast
 	/usr/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
 .PHONY : install/strip/fast
 
-# Special rule for the target install
-install: preinstall
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Install the project..."
-	/usr/bin/cmake -P cmake_install.cmake
-.PHONY : install
+# Special rule for the target install/local
+install/local: preinstall
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing only the local directory..."
+	/usr/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
+.PHONY : install/local
 
-# Special rule for the target install
-install/fast: preinstall/fast
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Install the project..."
-	/usr/bin/cmake -P cmake_install.cmake
-.PHONY : install/fast
-
-# Special rule for the target list_install_components
-list_install_components:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Available install components are: \"Unspecified\""
-.PHONY : list_install_components
-
-# Special rule for the target list_install_components
-list_install_components/fast: list_install_components
-
-.PHONY : list_install_components/fast
-
-# Special rule for the target rebuild_cache
-rebuild_cache:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
-	/usr/bin/cmake -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
-.PHONY : rebuild_cache
-
-# Special rule for the target rebuild_cache
-rebuild_cache/fast: rebuild_cache
-
-.PHONY : rebuild_cache/fast
-
-# Special rule for the target edit_cache
-edit_cache:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "No interactive CMake dialog available..."
-	/usr/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
-.PHONY : edit_cache
-
-# Special rule for the target edit_cache
-edit_cache/fast: edit_cache
-
-.PHONY : edit_cache/fast
+# Special rule for the target install/local
+install/local/fast: preinstall/fast
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing only the local directory..."
+	/usr/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
+.PHONY : install/local/fast
 
 # Special rule for the target test
 test:
@@ -123,17 +91,49 @@ test/fast: test
 
 .PHONY : test/fast
 
-# Special rule for the target install/local
-install/local: preinstall
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing only the local directory..."
-	/usr/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
-.PHONY : install/local
+# Special rule for the target edit_cache
+edit_cache:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "No interactive CMake dialog available..."
+	/usr/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
+.PHONY : edit_cache
 
-# Special rule for the target install/local
-install/local/fast: preinstall/fast
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing only the local directory..."
-	/usr/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
-.PHONY : install/local/fast
+# Special rule for the target edit_cache
+edit_cache/fast: edit_cache
+
+.PHONY : edit_cache/fast
+
+# Special rule for the target rebuild_cache
+rebuild_cache:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
+	/usr/bin/cmake -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+.PHONY : rebuild_cache
+
+# Special rule for the target rebuild_cache
+rebuild_cache/fast: rebuild_cache
+
+.PHONY : rebuild_cache/fast
+
+# Special rule for the target list_install_components
+list_install_components:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Available install components are: \"Unspecified\""
+.PHONY : list_install_components
+
+# Special rule for the target list_install_components
+list_install_components/fast: list_install_components
+
+.PHONY : list_install_components/fast
+
+# Special rule for the target install
+install: preinstall
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Install the project..."
+	/usr/bin/cmake -P cmake_install.cmake
+.PHONY : install
+
+# Special rule for the target install
+install/fast: preinstall/fast
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Install the project..."
+	/usr/bin/cmake -P cmake_install.cmake
+.PHONY : install/fast
 
 # The main all target
 all: cmake_check_build_system
@@ -168,64 +168,19 @@ depend:
 .PHONY : depend
 
 # Convenience name for target.
-uwb_pose_estimation/CMakeFiles/uwb_pose_estimation_node.dir/rule:
-	cd /home/yu/catkin_workspace/build && $(MAKE) -f CMakeFiles/Makefile2 uwb_pose_estimation/CMakeFiles/uwb_pose_estimation_node.dir/rule
-.PHONY : uwb_pose_estimation/CMakeFiles/uwb_pose_estimation_node.dir/rule
+uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_cpp.dir/rule:
+	cd /home/yu/catkin_workspace/build && $(MAKE) -f CMakeFiles/Makefile2 uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_cpp.dir/rule
+.PHONY : uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_cpp.dir/rule
 
 # Convenience name for target.
-uwb_pose_estimation_node: uwb_pose_estimation/CMakeFiles/uwb_pose_estimation_node.dir/rule
+visualization_msgs_generate_messages_cpp: uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_cpp.dir/rule
 
-.PHONY : uwb_pose_estimation_node
+.PHONY : visualization_msgs_generate_messages_cpp
 
 # fast build rule for target.
-uwb_pose_estimation_node/fast:
-	cd /home/yu/catkin_workspace/build && $(MAKE) -f uwb_pose_estimation/CMakeFiles/uwb_pose_estimation_node.dir/build.make uwb_pose_estimation/CMakeFiles/uwb_pose_estimation_node.dir/build
-.PHONY : uwb_pose_estimation_node/fast
-
-# Convenience name for target.
-uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_py.dir/rule:
-	cd /home/yu/catkin_workspace/build && $(MAKE) -f CMakeFiles/Makefile2 uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_py.dir/rule
-.PHONY : uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_py.dir/rule
-
-# Convenience name for target.
-visualization_msgs_generate_messages_py: uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_py.dir/rule
-
-.PHONY : visualization_msgs_generate_messages_py
-
-# fast build rule for target.
-visualization_msgs_generate_messages_py/fast:
-	cd /home/yu/catkin_workspace/build && $(MAKE) -f uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_py.dir/build.make uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_py.dir/build
-.PHONY : visualization_msgs_generate_messages_py/fast
-
-# Convenience name for target.
-uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_nodejs.dir/rule:
-	cd /home/yu/catkin_workspace/build && $(MAKE) -f CMakeFiles/Makefile2 uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_nodejs.dir/rule
-.PHONY : uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_nodejs.dir/rule
-
-# Convenience name for target.
-visualization_msgs_generate_messages_nodejs: uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_nodejs.dir/rule
-
-.PHONY : visualization_msgs_generate_messages_nodejs
-
-# fast build rule for target.
-visualization_msgs_generate_messages_nodejs/fast:
-	cd /home/yu/catkin_workspace/build && $(MAKE) -f uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_nodejs.dir/build.make uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_nodejs.dir/build
-.PHONY : visualization_msgs_generate_messages_nodejs/fast
-
-# Convenience name for target.
-uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_eus.dir/rule:
-	cd /home/yu/catkin_workspace/build && $(MAKE) -f CMakeFiles/Makefile2 uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_eus.dir/rule
-.PHONY : uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_eus.dir/rule
-
-# Convenience name for target.
-visualization_msgs_generate_messages_eus: uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_eus.dir/rule
-
-.PHONY : visualization_msgs_generate_messages_eus
-
-# fast build rule for target.
-visualization_msgs_generate_messages_eus/fast:
-	cd /home/yu/catkin_workspace/build && $(MAKE) -f uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_eus.dir/build.make uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_eus.dir/build
-.PHONY : visualization_msgs_generate_messages_eus/fast
+visualization_msgs_generate_messages_cpp/fast:
+	cd /home/yu/catkin_workspace/build && $(MAKE) -f uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_cpp.dir/build.make uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_cpp.dir/build
+.PHONY : visualization_msgs_generate_messages_cpp/fast
 
 # Convenience name for target.
 uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_lisp.dir/rule:
@@ -243,19 +198,79 @@ visualization_msgs_generate_messages_lisp/fast:
 .PHONY : visualization_msgs_generate_messages_lisp/fast
 
 # Convenience name for target.
-uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_cpp.dir/rule:
-	cd /home/yu/catkin_workspace/build && $(MAKE) -f CMakeFiles/Makefile2 uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_cpp.dir/rule
-.PHONY : uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_cpp.dir/rule
+uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_eus.dir/rule:
+	cd /home/yu/catkin_workspace/build && $(MAKE) -f CMakeFiles/Makefile2 uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_eus.dir/rule
+.PHONY : uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_eus.dir/rule
 
 # Convenience name for target.
-visualization_msgs_generate_messages_cpp: uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_cpp.dir/rule
+visualization_msgs_generate_messages_eus: uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_eus.dir/rule
 
-.PHONY : visualization_msgs_generate_messages_cpp
+.PHONY : visualization_msgs_generate_messages_eus
 
 # fast build rule for target.
-visualization_msgs_generate_messages_cpp/fast:
-	cd /home/yu/catkin_workspace/build && $(MAKE) -f uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_cpp.dir/build.make uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_cpp.dir/build
-.PHONY : visualization_msgs_generate_messages_cpp/fast
+visualization_msgs_generate_messages_eus/fast:
+	cd /home/yu/catkin_workspace/build && $(MAKE) -f uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_eus.dir/build.make uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_eus.dir/build
+.PHONY : visualization_msgs_generate_messages_eus/fast
+
+# Convenience name for target.
+uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_nodejs.dir/rule:
+	cd /home/yu/catkin_workspace/build && $(MAKE) -f CMakeFiles/Makefile2 uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_nodejs.dir/rule
+.PHONY : uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_nodejs.dir/rule
+
+# Convenience name for target.
+visualization_msgs_generate_messages_nodejs: uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_nodejs.dir/rule
+
+.PHONY : visualization_msgs_generate_messages_nodejs
+
+# fast build rule for target.
+visualization_msgs_generate_messages_nodejs/fast:
+	cd /home/yu/catkin_workspace/build && $(MAKE) -f uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_nodejs.dir/build.make uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_nodejs.dir/build
+.PHONY : visualization_msgs_generate_messages_nodejs/fast
+
+# Convenience name for target.
+uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_py.dir/rule:
+	cd /home/yu/catkin_workspace/build && $(MAKE) -f CMakeFiles/Makefile2 uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_py.dir/rule
+.PHONY : uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_py.dir/rule
+
+# Convenience name for target.
+visualization_msgs_generate_messages_py: uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_py.dir/rule
+
+.PHONY : visualization_msgs_generate_messages_py
+
+# fast build rule for target.
+visualization_msgs_generate_messages_py/fast:
+	cd /home/yu/catkin_workspace/build && $(MAKE) -f uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_py.dir/build.make uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_py.dir/build
+.PHONY : visualization_msgs_generate_messages_py/fast
+
+# Convenience name for target.
+uwb_pose_estimation/CMakeFiles/uwb_pose_estimation_node.dir/rule:
+	cd /home/yu/catkin_workspace/build && $(MAKE) -f CMakeFiles/Makefile2 uwb_pose_estimation/CMakeFiles/uwb_pose_estimation_node.dir/rule
+.PHONY : uwb_pose_estimation/CMakeFiles/uwb_pose_estimation_node.dir/rule
+
+# Convenience name for target.
+uwb_pose_estimation_node: uwb_pose_estimation/CMakeFiles/uwb_pose_estimation_node.dir/rule
+
+.PHONY : uwb_pose_estimation_node
+
+# fast build rule for target.
+uwb_pose_estimation_node/fast:
+	cd /home/yu/catkin_workspace/build && $(MAKE) -f uwb_pose_estimation/CMakeFiles/uwb_pose_estimation_node.dir/build.make uwb_pose_estimation/CMakeFiles/uwb_pose_estimation_node.dir/build
+.PHONY : uwb_pose_estimation_node/fast
+
+# Convenience name for target.
+uwb_pose_estimation/CMakeFiles/pose_compare_logger.dir/rule:
+	cd /home/yu/catkin_workspace/build && $(MAKE) -f CMakeFiles/Makefile2 uwb_pose_estimation/CMakeFiles/pose_compare_logger.dir/rule
+.PHONY : uwb_pose_estimation/CMakeFiles/pose_compare_logger.dir/rule
+
+# Convenience name for target.
+pose_compare_logger: uwb_pose_estimation/CMakeFiles/pose_compare_logger.dir/rule
+
+.PHONY : pose_compare_logger
+
+# fast build rule for target.
+pose_compare_logger/fast:
+	cd /home/yu/catkin_workspace/build && $(MAKE) -f uwb_pose_estimation/CMakeFiles/pose_compare_logger.dir/build.make uwb_pose_estimation/CMakeFiles/pose_compare_logger.dir/build
+.PHONY : pose_compare_logger/fast
 
 src/config_loader.o: src/config_loader.cpp.o
 
@@ -310,6 +325,33 @@ src/node_localization.s: src/node_localization.cpp.s
 src/node_localization.cpp.s:
 	cd /home/yu/catkin_workspace/build && $(MAKE) -f uwb_pose_estimation/CMakeFiles/uwb_pose_estimation_node.dir/build.make uwb_pose_estimation/CMakeFiles/uwb_pose_estimation_node.dir/src/node_localization.cpp.s
 .PHONY : src/node_localization.cpp.s
+
+src/pose_compare_logger.o: src/pose_compare_logger.cpp.o
+
+.PHONY : src/pose_compare_logger.o
+
+# target to build an object file
+src/pose_compare_logger.cpp.o:
+	cd /home/yu/catkin_workspace/build && $(MAKE) -f uwb_pose_estimation/CMakeFiles/pose_compare_logger.dir/build.make uwb_pose_estimation/CMakeFiles/pose_compare_logger.dir/src/pose_compare_logger.cpp.o
+.PHONY : src/pose_compare_logger.cpp.o
+
+src/pose_compare_logger.i: src/pose_compare_logger.cpp.i
+
+.PHONY : src/pose_compare_logger.i
+
+# target to preprocess a source file
+src/pose_compare_logger.cpp.i:
+	cd /home/yu/catkin_workspace/build && $(MAKE) -f uwb_pose_estimation/CMakeFiles/pose_compare_logger.dir/build.make uwb_pose_estimation/CMakeFiles/pose_compare_logger.dir/src/pose_compare_logger.cpp.i
+.PHONY : src/pose_compare_logger.cpp.i
+
+src/pose_compare_logger.s: src/pose_compare_logger.cpp.s
+
+.PHONY : src/pose_compare_logger.s
+
+# target to generate assembly for a file
+src/pose_compare_logger.cpp.s:
+	cd /home/yu/catkin_workspace/build && $(MAKE) -f uwb_pose_estimation/CMakeFiles/pose_compare_logger.dir/build.make uwb_pose_estimation/CMakeFiles/pose_compare_logger.dir/src/pose_compare_logger.cpp.s
+.PHONY : src/pose_compare_logger.cpp.s
 
 src/pose_estimation.o: src/pose_estimation.cpp.o
 
@@ -399,24 +441,28 @@ help:
 	@echo "... clean"
 	@echo "... depend"
 	@echo "... install/strip"
-	@echo "... install"
-	@echo "... list_install_components"
-	@echo "... rebuild_cache"
-	@echo "... edit_cache"
-	@echo "... test"
-	@echo "... uwb_pose_estimation_node"
-	@echo "... visualization_msgs_generate_messages_py"
-	@echo "... install/local"
-	@echo "... visualization_msgs_generate_messages_nodejs"
-	@echo "... visualization_msgs_generate_messages_eus"
-	@echo "... visualization_msgs_generate_messages_lisp"
 	@echo "... visualization_msgs_generate_messages_cpp"
+	@echo "... visualization_msgs_generate_messages_lisp"
+	@echo "... visualization_msgs_generate_messages_eus"
+	@echo "... visualization_msgs_generate_messages_nodejs"
+	@echo "... install/local"
+	@echo "... visualization_msgs_generate_messages_py"
+	@echo "... uwb_pose_estimation_node"
+	@echo "... test"
+	@echo "... pose_compare_logger"
+	@echo "... edit_cache"
+	@echo "... rebuild_cache"
+	@echo "... list_install_components"
+	@echo "... install"
 	@echo "... src/config_loader.o"
 	@echo "... src/config_loader.i"
 	@echo "... src/config_loader.s"
 	@echo "... src/node_localization.o"
 	@echo "... src/node_localization.i"
 	@echo "... src/node_localization.s"
+	@echo "... src/pose_compare_logger.o"
+	@echo "... src/pose_compare_logger.i"
+	@echo "... src/pose_compare_logger.s"
 	@echo "... src/pose_estimation.o"
 	@echo "... src/pose_estimation.i"
 	@echo "... src/pose_estimation.s"

@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   visualization_msgs
   nlink_parser
+  message_filters
 )
 
 # 查找外部依赖
@@ -50,6 +51,14 @@ target_link_libraries(${PROJECT_NAME}_node
 add_dependencies(${PROJECT_NAME}_node
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
   ${catkin_EXPORTED_TARGETS}
+)
+
+add_executable(pose_compare_logger
+  src/pose_compare_logger.cpp
+)
+
+target_link_libraries(pose_compare_logger
+  ${catkin_LIBRARIES}
 )
 
 # 安装

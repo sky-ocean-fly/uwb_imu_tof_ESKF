@@ -348,7 +348,7 @@ void nodeframeCallback(const nlink_parser::LinktrackNodeframe2::ConstPtr &msg)
         should_localize = all_tags_ready;
     } //出大括号，distances_mutex已经释放
 
-    if (should_localize && isDataValid() || 1)
+    if (should_localize && isDataValid())   //测试使用，加||1无需获取所有数据也能评估
     {
         // 执行位姿估计
         performLocalization();
@@ -700,6 +700,14 @@ void performLocalization()
     Eigen::Vector3d t_A_B_mocap =
         T_A_B_mocap.block<3, 1>(0, 3);
 
+    ros::Time compare_stamp = ros::Time::now();
+
+    publishMocapTruth(
+        R_A_B_mocap,
+        t_A_B_mocap,
+        compare_stamp
+    );
+
     Eigen::Vector3d mocap_euler =
         Utils::rotationMatrixToEuler(R_A_B_mocap);
 
@@ -747,7 +755,7 @@ void publishResult(const Eigen::Matrix3d &rotation,
     // 发布位姿
     geometry_msgs::PoseStamped pose_msg;
     pose_msg.header.stamp = ros::Time::now();
-    pose_msg.header.frame_id = "world";
+    pose_msg.header.frame_id = "anchor_frame_A";
 
     Eigen::Quaterniond q(rotation);
     pose_msg.pose.position.x = translation[0];
@@ -767,7 +775,7 @@ void publishResult(const Eigen::Matrix3d &rotation,
     {
         visualization_msgs::Marker marker;
         marker.header.stamp = ros::Time::now();
-        marker.header.frame_id = "world";
+        marker.header.frame_id = "anchor_frame_A";
         marker.ns = "estimated_nodes";
         marker.id = i;
         marker.type = visualization_msgs::Marker::SPHERE;
@@ -873,6 +881,9 @@ int main(int argc, char **argv)
     marker_pub = nh.advertise<visualization_msgs::MarkerArray>(
         "/estimated_node_positions", 10);
 
+    mocap_truth_pub = nh.advertise<geometry_msgs::PoseStamped>(
+        "/mocap_truth_pose", 10);
+
     ROS_INFO("已订阅话题:");
     ROS_INFO("  - /nlink_linktrack_nodeframe2");
     ROS_INFO("  - /ground_distance");
@@ -880,6 +891,7 @@ int main(int argc, char **argv)
     ROS_INFO("已发布话题:");
     ROS_INFO("  - /estimated_pose");
     ROS_INFO("  - /estimated_node_positions");
+    ROS_INFO("  - /mocap_truth_pose");
     ROS_INFO("等待数据...");
 
     ros::spin();

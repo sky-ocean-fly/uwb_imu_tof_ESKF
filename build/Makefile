@@ -1481,56 +1481,17 @@ uwb_sync_recorder/fast:
 .PHONY : uwb_sync_recorder/fast
 
 #=============================================================================
-# Target rules for targets named uwb_pose_estimation_node
+# Target rules for targets named visualization_msgs_generate_messages_cpp
 
 # Build rule for target.
-uwb_pose_estimation_node: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 uwb_pose_estimation_node
-.PHONY : uwb_pose_estimation_node
+visualization_msgs_generate_messages_cpp: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 visualization_msgs_generate_messages_cpp
+.PHONY : visualization_msgs_generate_messages_cpp
 
 # fast build rule for target.
-uwb_pose_estimation_node/fast:
-	$(MAKE) -f uwb_pose_estimation/CMakeFiles/uwb_pose_estimation_node.dir/build.make uwb_pose_estimation/CMakeFiles/uwb_pose_estimation_node.dir/build
-.PHONY : uwb_pose_estimation_node/fast
-
-#=============================================================================
-# Target rules for targets named visualization_msgs_generate_messages_py
-
-# Build rule for target.
-visualization_msgs_generate_messages_py: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 visualization_msgs_generate_messages_py
-.PHONY : visualization_msgs_generate_messages_py
-
-# fast build rule for target.
-visualization_msgs_generate_messages_py/fast:
-	$(MAKE) -f uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_py.dir/build.make uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_py.dir/build
-.PHONY : visualization_msgs_generate_messages_py/fast
-
-#=============================================================================
-# Target rules for targets named visualization_msgs_generate_messages_nodejs
-
-# Build rule for target.
-visualization_msgs_generate_messages_nodejs: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 visualization_msgs_generate_messages_nodejs
-.PHONY : visualization_msgs_generate_messages_nodejs
-
-# fast build rule for target.
-visualization_msgs_generate_messages_nodejs/fast:
-	$(MAKE) -f uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_nodejs.dir/build.make uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_nodejs.dir/build
-.PHONY : visualization_msgs_generate_messages_nodejs/fast
-
-#=============================================================================
-# Target rules for targets named visualization_msgs_generate_messages_eus
-
-# Build rule for target.
-visualization_msgs_generate_messages_eus: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 visualization_msgs_generate_messages_eus
-.PHONY : visualization_msgs_generate_messages_eus
-
-# fast build rule for target.
-visualization_msgs_generate_messages_eus/fast:
-	$(MAKE) -f uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_eus.dir/build.make uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_eus.dir/build
-.PHONY : visualization_msgs_generate_messages_eus/fast
+visualization_msgs_generate_messages_cpp/fast:
+	$(MAKE) -f uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_cpp.dir/build.make uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_cpp.dir/build
+.PHONY : visualization_msgs_generate_messages_cpp/fast
 
 #=============================================================================
 # Target rules for targets named visualization_msgs_generate_messages_lisp
@@ -1546,17 +1507,69 @@ visualization_msgs_generate_messages_lisp/fast:
 .PHONY : visualization_msgs_generate_messages_lisp/fast
 
 #=============================================================================
-# Target rules for targets named visualization_msgs_generate_messages_cpp
+# Target rules for targets named visualization_msgs_generate_messages_eus
 
 # Build rule for target.
-visualization_msgs_generate_messages_cpp: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 visualization_msgs_generate_messages_cpp
-.PHONY : visualization_msgs_generate_messages_cpp
+visualization_msgs_generate_messages_eus: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 visualization_msgs_generate_messages_eus
+.PHONY : visualization_msgs_generate_messages_eus
 
 # fast build rule for target.
-visualization_msgs_generate_messages_cpp/fast:
-	$(MAKE) -f uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_cpp.dir/build.make uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_cpp.dir/build
-.PHONY : visualization_msgs_generate_messages_cpp/fast
+visualization_msgs_generate_messages_eus/fast:
+	$(MAKE) -f uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_eus.dir/build.make uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_eus.dir/build
+.PHONY : visualization_msgs_generate_messages_eus/fast
+
+#=============================================================================
+# Target rules for targets named visualization_msgs_generate_messages_nodejs
+
+# Build rule for target.
+visualization_msgs_generate_messages_nodejs: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 visualization_msgs_generate_messages_nodejs
+.PHONY : visualization_msgs_generate_messages_nodejs
+
+# fast build rule for target.
+visualization_msgs_generate_messages_nodejs/fast:
+	$(MAKE) -f uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_nodejs.dir/build.make uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_nodejs.dir/build
+.PHONY : visualization_msgs_generate_messages_nodejs/fast
+
+#=============================================================================
+# Target rules for targets named visualization_msgs_generate_messages_py
+
+# Build rule for target.
+visualization_msgs_generate_messages_py: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 visualization_msgs_generate_messages_py
+.PHONY : visualization_msgs_generate_messages_py
+
+# fast build rule for target.
+visualization_msgs_generate_messages_py/fast:
+	$(MAKE) -f uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_py.dir/build.make uwb_pose_estimation/CMakeFiles/visualization_msgs_generate_messages_py.dir/build
+.PHONY : visualization_msgs_generate_messages_py/fast
+
+#=============================================================================
+# Target rules for targets named uwb_pose_estimation_node
+
+# Build rule for target.
+uwb_pose_estimation_node: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 uwb_pose_estimation_node
+.PHONY : uwb_pose_estimation_node
+
+# fast build rule for target.
+uwb_pose_estimation_node/fast:
+	$(MAKE) -f uwb_pose_estimation/CMakeFiles/uwb_pose_estimation_node.dir/build.make uwb_pose_estimation/CMakeFiles/uwb_pose_estimation_node.dir/build
+.PHONY : uwb_pose_estimation_node/fast
+
+#=============================================================================
+# Target rules for targets named pose_compare_logger
+
+# Build rule for target.
+pose_compare_logger: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 pose_compare_logger
+.PHONY : pose_compare_logger
+
+# fast build rule for target.
+pose_compare_logger/fast:
+	$(MAKE) -f uwb_pose_estimation/CMakeFiles/pose_compare_logger.dir/build.make uwb_pose_estimation/CMakeFiles/pose_compare_logger.dir/build
+.PHONY : pose_compare_logger/fast
 
 # Help Target
 help:
@@ -1672,12 +1685,13 @@ help:
 	@echo "... geometry_msgs_generate_messages_lisp"
 	@echo "... ground_distance_node"
 	@echo "... uwb_sync_recorder"
-	@echo "... uwb_pose_estimation_node"
-	@echo "... visualization_msgs_generate_messages_py"
-	@echo "... visualization_msgs_generate_messages_nodejs"
-	@echo "... visualization_msgs_generate_messages_eus"
-	@echo "... visualization_msgs_generate_messages_lisp"
 	@echo "... visualization_msgs_generate_messages_cpp"
+	@echo "... visualization_msgs_generate_messages_lisp"
+	@echo "... visualization_msgs_generate_messages_eus"
+	@echo "... visualization_msgs_generate_messages_nodejs"
+	@echo "... visualization_msgs_generate_messages_py"
+	@echo "... uwb_pose_estimation_node"
+	@echo "... pose_compare_logger"
 .PHONY : help
 
 

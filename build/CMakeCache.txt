@@ -492,7 +492,10 @@ imu_mahony_BINARY_DIR:STATIC=/home/yu/catkin_workspace/build/imu_mahony
 imu_mahony_SOURCE_DIR:STATIC=/home/yu/catkin_workspace/src/imu_mahony
 
 //Path to a library.
-lib:FILEPATH=/opt/ros/noetic/lib/libxmlrpcpp.so
+lib:FILEPATH=/opt/ros/noetic/lib/libmessage_filters.so
+
+//The directory containing a CMake configuration file for message_filters.
+message_filters_DIR:PATH=/opt/ros/noetic/share/message_filters/cmake
 
 //The directory containing a CMake configuration file for message_generation.
 message_generation_DIR:PATH=/opt/ros/noetic/share/message_generation/cmake
