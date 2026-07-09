@@ -10,13 +10,17 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <build_depend>roscpp</build_depend>
+  <build_depend>sensor_msgs</build_depend>
   <build_depend>geometry_msgs</build_depend>
   <build_depend>visualization_msgs</build_depend>
   <build_depend>nlink_parser</build_depend>
+  <build_depend>message_filters</build_depend>
 
   <exec_depend>roscpp</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>visualization_msgs</exec_depend>
   <exec_depend>nlink_parser</exec_depend>
+  <exec_depend>message_filters</exec_depend>
 
 </package>

@@ -16,6 +16,7 @@
 #include <boost/bind.hpp>
 #include <sys/stat.h>
 #include <errno.h>
+#include <clocale>
 
 class PoseCompareLogger
 {
@@ -324,6 +325,10 @@ private:
 
 int main(int argc, char **argv)
 {
+    // 设置locale以支持中文输出
+    setlocale(LC_ALL, "zh_CN.UTF-8");
+    setlocale(LC_NUMERIC, "C");  // 防止小数点变成逗号
+
     ros::init(argc, argv, "pose_compare_logger");
 
     PoseCompareLogger logger;

@@ -80,6 +80,18 @@ install/local/fast: preinstall/fast
 	/usr/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
 .PHONY : install/local/fast
 
+# Special rule for the target install
+install: preinstall
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Install the project..."
+	/usr/bin/cmake -P cmake_install.cmake
+.PHONY : install
+
+# Special rule for the target install
+install/fast: preinstall/fast
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Install the project..."
+	/usr/bin/cmake -P cmake_install.cmake
+.PHONY : install/fast
+
 # Special rule for the target test
 test:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running tests..."
@@ -122,18 +134,6 @@ list_install_components:
 list_install_components/fast: list_install_components
 
 .PHONY : list_install_components/fast
-
-# Special rule for the target install
-install: preinstall
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Install the project..."
-	/usr/bin/cmake -P cmake_install.cmake
-.PHONY : install
-
-# Special rule for the target install
-install/fast: preinstall/fast
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Install the project..."
-	/usr/bin/cmake -P cmake_install.cmake
-.PHONY : install/fast
 
 # The main all target
 all: cmake_check_build_system
@@ -258,6 +258,21 @@ uwb_pose_estimation_node/fast:
 .PHONY : uwb_pose_estimation_node/fast
 
 # Convenience name for target.
+uwb_pose_estimation/CMakeFiles/fake_imu_node.dir/rule:
+	cd /home/yu/catkin_workspace/build && $(MAKE) -f CMakeFiles/Makefile2 uwb_pose_estimation/CMakeFiles/fake_imu_node.dir/rule
+.PHONY : uwb_pose_estimation/CMakeFiles/fake_imu_node.dir/rule
+
+# Convenience name for target.
+fake_imu_node: uwb_pose_estimation/CMakeFiles/fake_imu_node.dir/rule
+
+.PHONY : fake_imu_node
+
+# fast build rule for target.
+fake_imu_node/fast:
+	cd /home/yu/catkin_workspace/build && $(MAKE) -f uwb_pose_estimation/CMakeFiles/fake_imu_node.dir/build.make uwb_pose_estimation/CMakeFiles/fake_imu_node.dir/build
+.PHONY : fake_imu_node/fast
+
+# Convenience name for target.
 uwb_pose_estimation/CMakeFiles/pose_compare_logger.dir/rule:
 	cd /home/yu/catkin_workspace/build && $(MAKE) -f CMakeFiles/Makefile2 uwb_pose_estimation/CMakeFiles/pose_compare_logger.dir/rule
 .PHONY : uwb_pose_estimation/CMakeFiles/pose_compare_logger.dir/rule
@@ -271,6 +286,21 @@ pose_compare_logger: uwb_pose_estimation/CMakeFiles/pose_compare_logger.dir/rule
 pose_compare_logger/fast:
 	cd /home/yu/catkin_workspace/build && $(MAKE) -f uwb_pose_estimation/CMakeFiles/pose_compare_logger.dir/build.make uwb_pose_estimation/CMakeFiles/pose_compare_logger.dir/build
 .PHONY : pose_compare_logger/fast
+
+# Convenience name for target.
+uwb_pose_estimation/CMakeFiles/uwb_imu_tof_eskf_node.dir/rule:
+	cd /home/yu/catkin_workspace/build && $(MAKE) -f CMakeFiles/Makefile2 uwb_pose_estimation/CMakeFiles/uwb_imu_tof_eskf_node.dir/rule
+.PHONY : uwb_pose_estimation/CMakeFiles/uwb_imu_tof_eskf_node.dir/rule
+
+# Convenience name for target.
+uwb_imu_tof_eskf_node: uwb_pose_estimation/CMakeFiles/uwb_imu_tof_eskf_node.dir/rule
+
+.PHONY : uwb_imu_tof_eskf_node
+
+# fast build rule for target.
+uwb_imu_tof_eskf_node/fast:
+	cd /home/yu/catkin_workspace/build && $(MAKE) -f uwb_pose_estimation/CMakeFiles/uwb_imu_tof_eskf_node.dir/build.make uwb_pose_estimation/CMakeFiles/uwb_imu_tof_eskf_node.dir/build
+.PHONY : uwb_imu_tof_eskf_node/fast
 
 src/config_loader.o: src/config_loader.cpp.o
 
@@ -298,6 +328,33 @@ src/config_loader.s: src/config_loader.cpp.s
 src/config_loader.cpp.s:
 	cd /home/yu/catkin_workspace/build && $(MAKE) -f uwb_pose_estimation/CMakeFiles/uwb_pose_estimation_node.dir/build.make uwb_pose_estimation/CMakeFiles/uwb_pose_estimation_node.dir/src/config_loader.cpp.s
 .PHONY : src/config_loader.cpp.s
+
+src/fake_imu_node.o: src/fake_imu_node.cpp.o
+
+.PHONY : src/fake_imu_node.o
+
+# target to build an object file
+src/fake_imu_node.cpp.o:
+	cd /home/yu/catkin_workspace/build && $(MAKE) -f uwb_pose_estimation/CMakeFiles/fake_imu_node.dir/build.make uwb_pose_estimation/CMakeFiles/fake_imu_node.dir/src/fake_imu_node.cpp.o
+.PHONY : src/fake_imu_node.cpp.o
+
+src/fake_imu_node.i: src/fake_imu_node.cpp.i
+
+.PHONY : src/fake_imu_node.i
+
+# target to preprocess a source file
+src/fake_imu_node.cpp.i:
+	cd /home/yu/catkin_workspace/build && $(MAKE) -f uwb_pose_estimation/CMakeFiles/fake_imu_node.dir/build.make uwb_pose_estimation/CMakeFiles/fake_imu_node.dir/src/fake_imu_node.cpp.i
+.PHONY : src/fake_imu_node.cpp.i
+
+src/fake_imu_node.s: src/fake_imu_node.cpp.s
+
+.PHONY : src/fake_imu_node.s
+
+# target to generate assembly for a file
+src/fake_imu_node.cpp.s:
+	cd /home/yu/catkin_workspace/build && $(MAKE) -f uwb_pose_estimation/CMakeFiles/fake_imu_node.dir/build.make uwb_pose_estimation/CMakeFiles/fake_imu_node.dir/src/fake_imu_node.cpp.s
+.PHONY : src/fake_imu_node.cpp.s
 
 src/node_localization.o: src/node_localization.cpp.o
 
@@ -407,6 +464,33 @@ src/utils.cpp.s:
 	cd /home/yu/catkin_workspace/build && $(MAKE) -f uwb_pose_estimation/CMakeFiles/uwb_pose_estimation_node.dir/build.make uwb_pose_estimation/CMakeFiles/uwb_pose_estimation_node.dir/src/utils.cpp.s
 .PHONY : src/utils.cpp.s
 
+src/uwb_imu_tof_eskf_node.o: src/uwb_imu_tof_eskf_node.cpp.o
+
+.PHONY : src/uwb_imu_tof_eskf_node.o
+
+# target to build an object file
+src/uwb_imu_tof_eskf_node.cpp.o:
+	cd /home/yu/catkin_workspace/build && $(MAKE) -f uwb_pose_estimation/CMakeFiles/uwb_imu_tof_eskf_node.dir/build.make uwb_pose_estimation/CMakeFiles/uwb_imu_tof_eskf_node.dir/src/uwb_imu_tof_eskf_node.cpp.o
+.PHONY : src/uwb_imu_tof_eskf_node.cpp.o
+
+src/uwb_imu_tof_eskf_node.i: src/uwb_imu_tof_eskf_node.cpp.i
+
+.PHONY : src/uwb_imu_tof_eskf_node.i
+
+# target to preprocess a source file
+src/uwb_imu_tof_eskf_node.cpp.i:
+	cd /home/yu/catkin_workspace/build && $(MAKE) -f uwb_pose_estimation/CMakeFiles/uwb_imu_tof_eskf_node.dir/build.make uwb_pose_estimation/CMakeFiles/uwb_imu_tof_eskf_node.dir/src/uwb_imu_tof_eskf_node.cpp.i
+.PHONY : src/uwb_imu_tof_eskf_node.cpp.i
+
+src/uwb_imu_tof_eskf_node.s: src/uwb_imu_tof_eskf_node.cpp.s
+
+.PHONY : src/uwb_imu_tof_eskf_node.s
+
+# target to generate assembly for a file
+src/uwb_imu_tof_eskf_node.cpp.s:
+	cd /home/yu/catkin_workspace/build && $(MAKE) -f uwb_pose_estimation/CMakeFiles/uwb_imu_tof_eskf_node.dir/build.make uwb_pose_estimation/CMakeFiles/uwb_imu_tof_eskf_node.dir/src/uwb_imu_tof_eskf_node.cpp.s
+.PHONY : src/uwb_imu_tof_eskf_node.cpp.s
+
 src/uwb_localization_node.o: src/uwb_localization_node.cpp.o
 
 .PHONY : src/uwb_localization_node.o
@@ -441,22 +525,27 @@ help:
 	@echo "... clean"
 	@echo "... depend"
 	@echo "... install/strip"
+	@echo "... install/local"
+	@echo "... install"
 	@echo "... visualization_msgs_generate_messages_cpp"
 	@echo "... visualization_msgs_generate_messages_lisp"
 	@echo "... visualization_msgs_generate_messages_eus"
 	@echo "... visualization_msgs_generate_messages_nodejs"
-	@echo "... install/local"
 	@echo "... visualization_msgs_generate_messages_py"
 	@echo "... uwb_pose_estimation_node"
 	@echo "... test"
+	@echo "... fake_imu_node"
 	@echo "... pose_compare_logger"
 	@echo "... edit_cache"
+	@echo "... uwb_imu_tof_eskf_node"
 	@echo "... rebuild_cache"
 	@echo "... list_install_components"
-	@echo "... install"
 	@echo "... src/config_loader.o"
 	@echo "... src/config_loader.i"
 	@echo "... src/config_loader.s"
+	@echo "... src/fake_imu_node.o"
+	@echo "... src/fake_imu_node.i"
+	@echo "... src/fake_imu_node.s"
 	@echo "... src/node_localization.o"
 	@echo "... src/node_localization.i"
 	@echo "... src/node_localization.s"
@@ -469,6 +558,9 @@ help:
 	@echo "... src/utils.o"
 	@echo "... src/utils.i"
 	@echo "... src/utils.s"
+	@echo "... src/uwb_imu_tof_eskf_node.o"
+	@echo "... src/uwb_imu_tof_eskf_node.i"
+	@echo "... src/uwb_imu_tof_eskf_node.s"
 	@echo "... src/uwb_localization_node.o"
 	@echo "... src/uwb_localization_node.i"
 	@echo "... src/uwb_localization_node.s"

@@ -37,6 +37,8 @@ sys/stat.h
 -
 errno.h
 -
+clocale
+-
 
 /opt/ros/noetic/include/geometry_msgs/Point.h
 string

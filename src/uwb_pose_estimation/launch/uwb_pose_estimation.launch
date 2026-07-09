@@ -10,7 +10,7 @@
       <param name="est_topic" value="/estimated_pose"/>
       <param name="gt_topic" value="/mocap_truth_pose"/>
 
-      <param name="csv_path" value="/home/yu/catkin_workspace/dynamic_pose_compare.csv"/>
+      <param name="csv_path" value="/home/yu/catkin_workspace/dynamic_pose_compare2.csv"/>
 
       <param name="queue_size" value="100"/>
       <param name="sync_slop" value="0.05"/>

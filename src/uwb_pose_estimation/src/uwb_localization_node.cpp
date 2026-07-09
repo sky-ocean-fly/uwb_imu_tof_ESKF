@@ -849,7 +849,8 @@ void publishMocapTruth(const Eigen::Matrix3d &rotation,
 int main(int argc, char **argv)
 {
     // 设置locale以支持中文输出
-    setlocale(LC_ALL, "");
+    setlocale(LC_ALL, "zh_CN.UTF-8");
+    setlocale(LC_NUMERIC, "C");  // 防止小数点变成逗号
 
     ros::init(argc, argv, "uwb_localization_node");
     ros::NodeHandle nh;

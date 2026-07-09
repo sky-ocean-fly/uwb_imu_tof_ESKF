@@ -1559,6 +1559,19 @@ uwb_pose_estimation_node/fast:
 .PHONY : uwb_pose_estimation_node/fast
 
 #=============================================================================
+# Target rules for targets named fake_imu_node
+
+# Build rule for target.
+fake_imu_node: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 fake_imu_node
+.PHONY : fake_imu_node
+
+# fast build rule for target.
+fake_imu_node/fast:
+	$(MAKE) -f uwb_pose_estimation/CMakeFiles/fake_imu_node.dir/build.make uwb_pose_estimation/CMakeFiles/fake_imu_node.dir/build
+.PHONY : fake_imu_node/fast
+
+#=============================================================================
 # Target rules for targets named pose_compare_logger
 
 # Build rule for target.
@@ -1570,6 +1583,19 @@ pose_compare_logger: cmake_check_build_system
 pose_compare_logger/fast:
 	$(MAKE) -f uwb_pose_estimation/CMakeFiles/pose_compare_logger.dir/build.make uwb_pose_estimation/CMakeFiles/pose_compare_logger.dir/build
 .PHONY : pose_compare_logger/fast
+
+#=============================================================================
+# Target rules for targets named uwb_imu_tof_eskf_node
+
+# Build rule for target.
+uwb_imu_tof_eskf_node: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 uwb_imu_tof_eskf_node
+.PHONY : uwb_imu_tof_eskf_node
+
+# fast build rule for target.
+uwb_imu_tof_eskf_node/fast:
+	$(MAKE) -f uwb_pose_estimation/CMakeFiles/uwb_imu_tof_eskf_node.dir/build.make uwb_pose_estimation/CMakeFiles/uwb_imu_tof_eskf_node.dir/build
+.PHONY : uwb_imu_tof_eskf_node/fast
 
 # Help Target
 help:
@@ -1691,7 +1717,9 @@ help:
 	@echo "... visualization_msgs_generate_messages_nodejs"
 	@echo "... visualization_msgs_generate_messages_py"
 	@echo "... uwb_pose_estimation_node"
+	@echo "... fake_imu_node"
 	@echo "... pose_compare_logger"
+	@echo "... uwb_imu_tof_eskf_node"
 .PHONY : help
 
 
