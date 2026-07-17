@@ -52,18 +52,18 @@ Eigen::Matrix3d Utils::eulerToRotationMatrix(double angle_z, double angle_y, dou
 
 Eigen::Vector3d Utils::rotationMatrixToEuler(const Eigen::Matrix3d& R) {
     // 将旋转矩阵转换为欧拉角 (Z-Y-X顺序)
-    double sy = sqrt(R(0,0) * R(0,0) + R(1,0) * R(1,0));
+    double cos_pitch_abs = sqrt(R(0,0) * R(0,0) + R(1,0) * R(1,0));
     
-    bool singular = sy < 1e-6;
+    bool singular = cos_pitch_abs < 1e-6;
     
     double x, y, z;
     if (!singular) {
         x = atan2(R(2,1), R(2,2));
-        y = atan2(-R(2,0), sy);
+        y = atan2(-R(2,0), cos_pitch_abs);
         z = atan2(R(1,0), R(0,0));
     } else {
         x = atan2(-R(1,2), R(1,1));
-        y = atan2(-R(2,0), sy);
+        y = atan2(-R(2,0), cos_pitch_abs);
         z = 0;
     }
     

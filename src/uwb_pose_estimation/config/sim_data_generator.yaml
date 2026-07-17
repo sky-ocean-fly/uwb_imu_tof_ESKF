@@ -1,0 +1,37 @@
+# Deterministic simulation configuration.
+duration_sec: 60.0
+start_delay_sec: 1.0
+loop: false
+shutdown_on_finish: false
+random_seed: 20260714
+
+# Continuous-time IMU noise density.
+# Discrete sample noise is generated as sigma_density / sqrt(dt), dt = 0.01 s.
+sigma_gyro_density: 0.002   # rad/s/sqrt(Hz)
+sigma_acc_density: 0.020    # m/s^2/sqrt(Hz)
+
+# Per-measurement discrete standard deviations.
+sigma_uwb: 0.033            # 随机噪声标准差，m
+uwb_bias: 0.10              # 固定正偏置，m
+sigma_tof: 0.020            # m
+sigma_rp_deg: 0.50          # deg, roll/pitch output for optimization node
+sigma_yaw_deg: 1.00         # deg
+
+# Common initial-pose perturbation applied to truth at t=0.
+init_dp_x: 0.25             # m
+init_dp_y: -0.20            # m
+init_dp_z: 0.15             # m
+init_droll_deg: 5.0
+init_dpitch_deg: -4.0
+init_dyaw_deg: 8.0
+
+imu_a_topic: /imu_A/data_raw
+imu_b_topic: /imu_B/data_raw
+rpy_topic: /imu/rpy
+tof_topic: /ground_distance
+uwb_topic: /nlink_linktrack_nodeframe2
+world_a_topic: /sim/world_pose_A
+world_b_topic: /sim/world_pose_B
+relative_truth_topic: /sim/relative_truth_pose
+relative_twist_topic: /sim/relative_truth_twist
+initial_pose_topic: /sim/initial_pose

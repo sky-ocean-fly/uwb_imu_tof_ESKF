@@ -18,7 +18,7 @@ init_from_mocap: false            # 只建议调试时改true；正式实验不�
 
 # 现有/ground_distance的point.y已经是垂直高度，所以默认true。
 # 若改为订阅原始ToF斜距point.x，再把这里改false，使用推导中的 -alpha/beta 模型。
-tof_vertical_mode: false
+tof_vertical_mode: true
 
 imu_queue_size: 100
 imu_sync_slop: 0.01
@@ -29,7 +29,7 @@ sigma_gyro_B: 0.02
 sigma_acc_A: 0.20
 sigma_acc_B: 0.20
 sigma_uwb: 0.05
-sigma_tof: 0.03
+sigma_tof: 0.005
 
 uwb_residual_gate: 2.0
 tof_residual_gate: 1.0

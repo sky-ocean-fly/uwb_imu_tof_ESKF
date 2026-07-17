@@ -39,6 +39,7 @@
 #include <vector>
 #include <algorithm>
 #include <clocale>
+#include <set>
 
 namespace
 {
@@ -176,6 +177,11 @@ public:
         pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(eskf_pose_topic_, 10);
         mocap_truth_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(mocap_truth_topic_, 10);
 
+        publish_timer_ = nh_.createTimer(
+            ros::Duration(1.0 / publish_rate_hz_),
+            &UwbImuTofEskfNode::publishTimerCallback,
+            this);
+
         uwb_sub_ = nh_.subscribe(uwb_topic_, 50, &UwbImuTofEskfNode::uwbCallback, this);
         tof_sub_ = nh_.subscribe(tof_topic_, 50, &UwbImuTofEskfNode::tofCallback, this);
         mocap_sub_ = nh_.subscribe(mocap_topic_, 50, &UwbImuTofEskfNode::mocapCallback, this);
@@ -209,6 +215,7 @@ public:
 private:
     using ImuSyncPolicy = message_filters::sync_policies::ApproximateTime<sensor_msgs::Imu, sensor_msgs::Imu>;
     using ImuSynchronizer = message_filters::Synchronizer<ImuSyncPolicy>;
+    using DistanceMap = std::map<int, std::map<int, double>>;
 
     void loadParams()
     {
@@ -218,9 +225,10 @@ private:
         pnh_.param<std::string>("imu_b_topic", imu_b_topic_, "/imu_B/data_raw");
         pnh_.param<std::string>("mocap_topic", mocap_topic_, "/vrpn_client/UWB_rocket/pose");
         pnh_.param<std::string>("eskf_pose_topic", eskf_pose_topic_, "/eskf_estimated_pose");
-        pnh_.param<std::string>("mocap_truth_topic", mocap_truth_topic_, "/mocap_truth_pose");
+        pnh_.param<std::string>("mocap_truth_topic", mocap_truth_topic_, "/eskf_mocap_truth_pose");
         pnh_.param<std::string>("init_pose_topic", init_pose_topic_, "/estimated_pose");
         pnh_.param<std::string>("frame_id", frame_id_, "anchor_frame_A");
+        pnh_.param<double>("publish_rate_hz", publish_rate_hz_, 50.0);//发布估计的和真实的相对位姿的50Hz定时器
 
         pnh_.param<bool>("init_from_pose_topic", init_from_pose_topic_, true);
         pnh_.param<bool>("init_from_mocap", init_from_mocap_, false);
@@ -342,7 +350,6 @@ private:
         resetCovariance();
 
         ROS_WARN("ESKF已用初始位姿话题初始化：%s", init_pose_topic_.c_str());
-        publishEstimate(msg->header.stamp);
     }
 
     void mocapCallback(const geometry_msgs::PoseStamped::ConstPtr &msg)
@@ -357,7 +364,10 @@ private:
         const Eigen::Matrix3d R_A_B = T_A_B.block<3, 3>(0, 0);
         const Eigen::Vector3d p_A_B = T_A_B.block<3, 1>(0, 3);
 
-        publishMocapTruth(R_A_B, p_A_B, msg->header.stamp.isZero() ? ros::Time::now() : msg->header.stamp);
+        // 缓存最新动捕真值，由50 Hz定时器统一发布
+        latest_mocap_truth_R_ = R_A_B;
+        latest_mocap_truth_p_ = p_A_B;
+        has_mocap_truth_ = true;
 
         if (init_from_mocap_ && !initialized_ && !init_from_pose_topic_)
         {
@@ -368,7 +378,6 @@ private:
             has_last_imu_pair_time_ = false;
             resetCovariance();
             ROS_WARN("ESKF已用动捕真值初始化。该模式只建议用于调试，不建议作为正式实验结果。 ");
-            publishEstimate(msg->header.stamp);
         }
     }
 
@@ -407,8 +416,11 @@ private:
         const Eigen::Vector3d f_A = vec3FromImuLinearAcc(imu_a);
         const Eigen::Vector3d f_B = vec3FromImuLinearAcc(imu_b);
 
+        ros::WallTime t_predict_start = ros::WallTime::now();
         propagate(omega_A, omega_B, f_A, f_B, dt);
-        publishEstimate(stamp);
+        ros::WallDuration predict_elapsed = ros::WallTime::now() - t_predict_start;
+        ROS_INFO("[ESKF计时] 预测(propagate) 耗时: %.3f ms, dt=%.3f ms",
+                 predict_elapsed.toSec() * 1e3, dt * 1e3);
     }
 
     void propagate(const Eigen::Vector3d &omega_A,
@@ -460,34 +472,81 @@ private:
     void uwbCallback(const nlink_parser::LinktrackNodeframe2::ConstPtr &msg)
     {
         const int tag_id = msg->id;
+
+        // 只处理指定的4个标签
         if (tagIdToIndex(tag_id) < 0)
             return;
 
-        {
-            std::lock_guard<std::mutex> lock(dist_mutex_);
-            for (const auto &node : msg->nodes)
-            {
-                const int anchor_id = node.id;
-                if (anchorIdToIndex(anchor_id) >= 0)
-                {
-                    distances_cache_[tag_id][anchor_id] = static_cast<double>(node.dis);
-                }
-            }
-        }
-
+        // 初始化之前不缓存，保证初始化后的第一批数据是全新的
         if (!initialized_)
             return;
 
-        updateUwb(ros::Time::now());
-    }
+        DistanceMap complete_batch;
+        bool batch_ready = false;
 
-    void updateUwb(const ros::Time &stamp)
-    {
-        std::map<int, std::map<int, double>> distances;
         {
             std::lock_guard<std::mutex> lock(dist_mutex_);
-            distances = distances_cache_;
+
+            /*
+            * 当前消息对应一个标签。
+            * 先清空该标签上一次的数据，避免当前消息缺少某个基站时，
+            * 继续使用上一次该基站的旧距离。
+            */
+            std::map<int, double> &tag_distances =
+                distances_cache_[tag_id];
+
+            tag_distances.clear();
+
+            for (const auto &node : msg->nodes)
+            {
+                const int anchor_id = node.id;
+
+                if (anchorIdToIndex(anchor_id) < 0)
+                    continue;
+
+                const double distance = static_cast<double>(node.dis);
+
+                if (!std::isfinite(distance) || distance <= 0.0)
+                    continue;
+
+                tag_distances[anchor_id] = distance;
+            }
+
+            // 当前标签没有任何有效测距，不认为已经收到该标签
+            if (tag_distances.empty())
+            {
+                distances_cache_.erase(tag_id);
+                return;
+            }
+
+            // 记录本轮已经收到的标签
+            received_tag_ids_.insert(tag_id);
+
+            // 收齐4个不同标签
+            if (received_tag_ids_.size() == tag_ids_.size())
+            {
+                // 固定本轮数据，防止下一轮回调修改本次更新数据
+                complete_batch = distances_cache_;
+
+                // 开始下一轮标签数据收集
+                distances_cache_.clear();
+                received_tag_ids_.clear();
+
+                batch_ready = true;
+            }
         }
+
+        // 收齐4个标签后，只进行一次UWB更新
+        if (batch_ready)
+        {
+            updateUwb(ros::Time::now(), complete_batch);
+        }
+    }
+
+    void updateUwb(const ros::Time &stamp,
+               const DistanceMap &distances)
+    {
+        ros::WallTime t_start = ros::WallTime::now();
 
         const int max_rows = static_cast<int>(tag_ids_.size() * anchor_ids_.size());
         Eigen::MatrixXd H(max_rows, 9);
@@ -499,17 +558,25 @@ private:
         for (size_t j = 0; j < tag_ids_.size(); ++j)
         {
             const int tag_id = tag_ids_[j];
-            if (distances.find(tag_id) == distances.end())
+
+            // 查找当前标签，不能使用 distances[tag_id]
+            const auto tag_it = distances.find(tag_id);
+            if (tag_it == distances.end())
                 continue;
+
+            // 当前标签对应的所有基站测距
+            const std::map<int, double> &tag_distances = tag_it->second;
 
             for (size_t i = 0; i < anchor_ids_.size(); ++i)
             {
                 const int anchor_id = anchor_ids_[i];
-                auto it = distances[tag_id].find(anchor_id);
-                if (it == distances[tag_id].end())
+
+                // 在当前标签的测距数据中查找基站
+                const auto distance_it = tag_distances.find(anchor_id);
+                if (distance_it == tag_distances.end())
                     continue;
 
-                const double z = it->second;
+                const double z = distance_it->second;
                 if (!std::isfinite(z) || z <= 0.0)
                     continue;
 
@@ -527,11 +594,11 @@ private:
                 H.block<1, 3>(row, 0) = -u.transpose() * skew(Rb);
                 // H.block<1, 3>(row, 0).setZero();//UWB不修正姿态
                 H.block<1, 3>(row, 3).setZero();
-                // H.block<1, 3>(row, 6) = u.transpose();
+                H.block<1, 3>(row, 6) = u.transpose();
                 // UWB 只修正 p_x, p_y，不直接修正 p_z
-                H(row, 6) = u.x();
-                H(row, 7) = u.y();
-                H(row, 8) = 0.0;
+                // H(row, 6) = u.x();
+                // H(row, 7) = u.y();
+                // H(row, 8) = 0.0;
                 r(row) = residual;
                 ++row;
             }
@@ -547,14 +614,19 @@ private:
         r.conservativeResize(row);
 
         Eigen::MatrixXd Rm = sigma_uwb_ * sigma_uwb_ * Eigen::MatrixXd::Identity(row, row);
-        measurementUpdate(H, r, Rm, true);
-        publishEstimate(stamp);
+        measurementUpdate(H, r, Rm, MeasurementMode::UWB_XY_ONLY);
+
+        ros::WallDuration total_elapsed = ros::WallTime::now() - t_start;
+        ROS_INFO("[ESKF计时] UWB更新全周期 耗时: %.3f ms, 有效测量数=%d",
+                 total_elapsed.toSec() * 1e3, row);
     }
 
     void tofCallback(const geometry_msgs::PointStamped::ConstPtr &msg)
     {
         if (!initialized_)
             return;
+
+        ros::WallTime t_start = ros::WallTime::now();
 
         const double z = tof_vertical_mode_ ? msg->point.y : msg->point.x;
         if (!std::isfinite(z) || z <= 0.0)
@@ -569,7 +641,7 @@ private:
 
         if (tof_vertical_mode_)
         {
-            // 当前/ground_distance的point.y已经是垂直高度时，用这个简化观测更稳。
+            // 当前/ground_distance的point.y已经是垂直高度时，用这个简化观测更稳。(point.y=d_{tof}*cos(pitch)*cos(roll))
             z_hat = e3.transpose() * (p_ + Rc);
             H.block<1, 3>(0, 0) = -e3.transpose() * skew(Rc);
             // H.block<1, 3>(0, 0).setZero();   // 先不要让ToF修正姿态
@@ -595,6 +667,8 @@ private:
         }
 
         const double residual = z - z_hat;
+        ROS_INFO("ToF: measured=%.4f m, predicted=%.4f m, residual=%.4f m, p_z=%.4f m, Rc_z=%.4f m",
+                 z, z_hat, residual, p_.z(), Rc.z());
         if (tof_residual_gate_ > 0.0 && std::fabs(residual) > tof_residual_gate_)
             return;
 
@@ -605,40 +679,87 @@ private:
         Eigen::MatrixXd Rm(1, 1);
         Rm(0, 0) = sigma_tof_ * sigma_tof_;
 
-        measurementUpdate(Hdyn, r, Rm, true);
-        publishEstimate(msg->header.stamp.isZero() ? ros::Time::now() : msg->header.stamp);
+        measurementUpdate(Hdyn, r, Rm, MeasurementMode::TOF_Z_VZ_ONLY);  // ToF 解锁姿态，允许修正 roll/pitch
+
+        ros::WallDuration total_elapsed = ros::WallTime::now() - t_start;
+        ROS_INFO("[ESKF计时] ToF更新全周期 耗时: %.3f ms",
+                 total_elapsed.toSec() * 1e3);
     }
 
-    //加入UWB和ToF不修正姿态(true为修正，false为不修正)
+    void publishTimerCallback(const ros::TimerEvent &event)
+    {
+        // 两个话题使用完全相同的时间戳，方便后续同步比较
+        const ros::Time stamp = event.current_real;
+
+        if (initialized_)
+        {
+            publishEstimate(stamp);
+        }
+
+        if (has_mocap_truth_)
+        {
+            publishMocapTruth(
+                latest_mocap_truth_R_,
+                latest_mocap_truth_p_,
+                stamp);
+        }
+    }
+
+    enum class MeasurementMode
+    {
+        FULL,
+        UWB_XY_ONLY,
+        TOF_Z_VZ_ONLY
+    };
+
     void measurementUpdate(const Eigen::MatrixXd &H,
-                           const Eigen::VectorXd &r,
-                           const Eigen::MatrixXd &Rm,
-                           bool lock_attitude = false)
+                        const Eigen::VectorXd &r,
+                        const Eigen::MatrixXd &Rm,
+                        MeasurementMode mode = MeasurementMode::FULL)
     {
         if (H.rows() == 0)
             return;
 
+        ros::WallTime t_update_start = ros::WallTime::now();
+
         const Matrix9d I9 = Matrix9d::Identity();
         const Eigen::MatrixXd S = H * P_ * H.transpose() + Rm;
-        Eigen::MatrixXd K = (S.ldlt().solve(H * P_.transpose())).transpose();
 
-        if (lock_attitude)
+        const Eigen::MatrixXd K_full =
+            (S.ldlt().solve(H * P_.transpose())).transpose();
+
+        Eigen::MatrixXd K =
+            Eigen::MatrixXd::Zero(9, H.rows());
+
+        if (mode == MeasurementMode::FULL)
         {
-            K.block(0, 0, 3, K.cols()).setZero();
+            K = K_full;
+        }
+        else if (mode == MeasurementMode::UWB_XY_ONLY)
+        {
+            // UWB严格只修改p_x、p_y
+            K.row(6) = K_full.row(6);
+            K.row(7) = K_full.row(7);
+        }
+        else if (mode == MeasurementMode::TOF_Z_VZ_ONLY)
+        {
+            // ToF修改v_z和p_z
+            K.row(5) = K_full.row(5);
+            K.row(8) = K_full.row(8);
         }
 
-        Vector9d dx = K * r;
-
-        if (lock_attitude)
-        {
-            dx.segment<3>(0).setZero();
-        }
+        const Vector9d dx = K * r;
 
         const Matrix9d IKH = I9 - K * H;
-        P_ = IKH * P_ * IKH.transpose() + K * Rm * K.transpose();
+        P_ = IKH * P_ * IKH.transpose()
+        + K * Rm * K.transpose();
 
         injectError(dx);
         symmetrizeCovariance();
+
+        ros::WallDuration update_elapsed = ros::WallTime::now() - t_update_start;
+        ROS_INFO("[ESKF计时] 更新(measurementUpdate) 耗时: %.3f ms, 测量数=%d, 模式=%d",
+                 update_elapsed.toSec() * 1e3, (int)H.rows(), (int)mode);
     }
 
     void injectError(const Vector9d &dx)
@@ -658,6 +779,7 @@ private:
         P_ = 0.5 * (P_ + P_.transpose());
     }
 
+    //发布估计的位姿
     void publishEstimate(const ros::Time &stamp)
     {
         if (!initialized_)
@@ -715,6 +837,7 @@ private:
     std::string mocap_truth_topic_;
     std::string init_pose_topic_;
     std::string frame_id_;
+    double publish_rate_hz_;
 
     bool init_from_pose_topic_;
     bool init_from_mocap_;
@@ -748,6 +871,10 @@ private:
     Eigen::Vector3d p_ = Eigen::Vector3d::Zero();
     Matrix9d P_ = Matrix9d::Identity();
 
+    bool has_mocap_truth_ = false;//保存最新的动捕真值
+    Eigen::Matrix3d latest_mocap_truth_R_ = Eigen::Matrix3d::Identity();
+    Eigen::Vector3d latest_mocap_truth_p_ = Eigen::Vector3d::Zero();
+
     bool initialized_;
     bool has_last_imu_pair_time_;
     ros::Time last_imu_pair_time_;
@@ -759,8 +886,11 @@ private:
     Eigen::Vector3d tof_position_B_;
     Eigen::Vector3d tof_ray_B_;
 
-    std::map<int, std::map<int, double>> distances_cache_;
+    DistanceMap distances_cache_;
+    // 当前批次已经收到的标签ID
+    std::set<int> received_tag_ids_;
     std::mutex dist_mutex_;
+
 
     ros::Subscriber uwb_sub_;
     ros::Subscriber tof_sub_;
@@ -768,6 +898,7 @@ private:
     ros::Subscriber init_pose_sub_;
     ros::Publisher pose_pub_;
     ros::Publisher mocap_truth_pub_;
+    ros::Timer publish_timer_;
 
     message_filters::Subscriber<sensor_msgs::Imu> imu_a_sub_;
     message_filters::Subscriber<sensor_msgs::Imu> imu_b_sub_;

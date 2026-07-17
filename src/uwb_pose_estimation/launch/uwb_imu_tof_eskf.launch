@@ -22,6 +22,7 @@
 
   <node pkg="$(arg pkg)" type="uwb_imu_tof_eskf_node" name="uwb_imu_tof_eskf_node" output="screen">
     <rosparam command="load" file="$(arg config_file)" />
+    <param name="publish_rate_hz" value="50.0"/>
   </node>
 
   <!-- 复用你已有的pose_compare_logger，只改est_topic即可对比ESKF和动捕真值 -->

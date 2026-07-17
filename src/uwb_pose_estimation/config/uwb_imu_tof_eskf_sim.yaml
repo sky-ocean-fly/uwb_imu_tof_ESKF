@@ -1,0 +1,45 @@
+# Simulation parameters for the ESKF node.
+uwb_topic: /nlink_linktrack_nodeframe2
+tof_topic: /ground_distance
+imu_a_topic: /imu_A/data_raw
+imu_b_topic: /imu_B/data_raw
+mocap_topic: /sim/relative_truth_pose
+
+eskf_pose_topic: /eskf_estimated_pose
+mocap_truth_topic: /eskf_truth_pose
+frame_id: anchor_frame_A
+
+# Both algorithms receive the same perturbed initial pose from the generator.
+init_from_pose_topic: true
+init_pose_topic: /sim/initial_pose
+init_from_mocap: false
+
+tof_vertical_mode: false
+imu_queue_size: 200
+imu_sync_slop: 0.001
+max_imu_dt: 0.03
+
+# These are continuous-time densities and must match sim_data_generator.yaml.
+sigma_gyro_A: 0.002
+sigma_gyro_B: 0.002
+sigma_acc_A: 0.020
+sigma_acc_B: 0.020
+
+# These are per-measurement standard deviations.
+sigma_uwb: 0.1  #0.033 #0.1表示有正偏置的时候
+sigma_tof: 0.020
+
+uwb_residual_gate: 2.0
+tof_residual_gate: 1.0
+
+# Used only if init_from_pose_topic=false.
+init_p_x: 0.8
+init_p_y: 0.0
+init_p_z: 1.7
+init_yaw_deg: 0.0
+init_pitch_deg: 0.0
+init_roll_deg: 0.0
+
+init_sigma_angle: 0.30
+init_sigma_velocity: 0.50
+init_sigma_position: 0.50

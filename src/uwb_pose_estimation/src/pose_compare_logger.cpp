@@ -17,6 +17,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <clocale>
+#include <limits>
 
 class PoseCompareLogger
 {
@@ -24,7 +25,13 @@ public:
     PoseCompareLogger()
         : pnh_("~"),
           has_t0_(false),
-          t0_(0.0)
+          t0_(0.0),
+          sample_count_(0),
+          sum_sq_pos_(0.0),
+          sum_sq_rot_deg_(0.0),
+          max_pos_(0.0),
+          max_rot_deg_(0.0),
+          reported_(false)
     {
         pnh_.param<std::string>("est_topic", est_topic_, "/estimated_pose");
         pnh_.param<std::string>("gt_topic", gt_topic_, "/mocap_truth_pose");
@@ -32,6 +39,9 @@ public:
 
         pnh_.param<int>("queue_size", queue_size_, 100);
         pnh_.param<double>("sync_slop", sync_slop_, 0.05);
+        pnh_.param<std::string>("method_name", method_name_, "pose_estimator");
+        pnh_.param<double>("evaluation_duration_sec", evaluation_duration_sec_, 0.0);
+        pnh_.param<double>("simulation_start_stamp_sec", simulation_start_stamp_sec_, -1.0);
 
         // 尝试打开文件，如果失败则尝试创建目录后重试
         file_.open(csv_path_.c_str());
@@ -90,10 +100,19 @@ public:
         ROS_INFO("  动捕真值话题: %s", gt_topic_.c_str());
         ROS_INFO("  CSV保存路径: %s", csv_path_.c_str());
         ROS_INFO("  同步时间容差: %.3f s", sync_slop_);
+        if (evaluation_duration_sec_ > 0.0)
+        {
+            ROS_INFO("  误差统计区间: %.3f s", evaluation_duration_sec_);
+        }
     }
 
     ~PoseCompareLogger()
     {
+        // Also provide a partial result when the node is stopped early.
+        if (!reported_ && sample_count_ > 0)
+        {
+            reportStatistics("节点退出，以下为当前已采集区间的统计");
+        }
         if (file_.is_open())
         {
             file_.close();
@@ -244,13 +263,24 @@ private:
 
         double stamp = 0.5 * (stamp_est + stamp_gt);
 
+        if (reported_)
+        {
+            return;
+        }
+
         if (!has_t0_)
         {
-            t0_ = stamp;
+            t0_ = simulation_start_stamp_sec_ >= 0.0
+                      ? simulation_start_stamp_sec_
+                      : stamp;
             has_t0_ = true;
         }
 
         double time = stamp - t0_;
+        if (time < 0.0)
+        {
+            return;
+        }
 
         Eigen::Vector3d t_est = getPosition(est_msg);
         Eigen::Vector3d t_gt = getPosition(gt_msg);
@@ -273,6 +303,12 @@ private:
         rpy_err.z() = wrapToPi(rpy_est.z() - rpy_gt.z());
 
         double err_rot_deg = rotationErrorDeg(R_est, R_gt);
+
+        ++sample_count_;
+        sum_sq_pos_ += static_cast<long double>(err_pos_norm) * err_pos_norm;
+        sum_sq_rot_deg_ += static_cast<long double>(err_rot_deg) * err_rot_deg;
+        max_pos_ = std::max(max_pos_, err_pos_norm);
+        max_rot_deg_ = std::max(max_rot_deg_, err_rot_deg);
 
         file_ << time << ","
               << stamp_est << "," << stamp_gt << ","
@@ -299,6 +335,39 @@ private:
               << "\n";
 
         file_.flush();
+
+        // The simulator publishes a sample exactly at t=duration, so include it
+        // before printing the final result.
+        if (evaluation_duration_sec_ > 0.0 &&
+            time + 1e-9 >= evaluation_duration_sec_)
+        {
+            reportStatistics("仿真评估完成");
+        }
+    }
+
+    void reportStatistics(const std::string &reason)
+    {
+        if (reported_ || sample_count_ == 0)
+        {
+            return;
+        }
+
+        const double position_rmse =
+            std::sqrt(static_cast<double>(sum_sq_pos_ / sample_count_));
+        const double attitude_rmse_deg =
+            std::sqrt(static_cast<double>(sum_sq_rot_deg_ / sample_count_));
+
+        ROS_INFO("\n========== %s 误差统计 ==========\n"
+                 "状态: %s\n"
+                 "有效同步样本数: %zu\n"
+                 "位置 RMSE: %.6f m\n"
+                 "位置最大误差: %.6f m\n"
+                 "姿态 RMSE: %.6f °\n"
+                 "姿态最大误差: %.6f °\n"
+                 "=====================================",
+                 method_name_.c_str(), reason.c_str(), sample_count_,
+                 position_rmse, max_pos_, attitude_rmse_deg, max_rot_deg_);
+        reported_ = true;
     }
 
 private:
@@ -308,9 +377,12 @@ private:
     std::string est_topic_;
     std::string gt_topic_;
     std::string csv_path_;
+    std::string method_name_;
 
     int queue_size_;
     double sync_slop_;
+    double evaluation_duration_sec_;
+    double simulation_start_stamp_sec_;
 
     message_filters::Subscriber<geometry_msgs::PoseStamped> est_sub_;
     message_filters::Subscriber<geometry_msgs::PoseStamped> gt_sub_;
@@ -321,6 +393,12 @@ private:
 
     bool has_t0_;
     double t0_;
+    std::size_t sample_count_;
+    long double sum_sq_pos_;
+    long double sum_sq_rot_deg_;
+    double max_pos_;
+    double max_rot_deg_;
+    bool reported_;
 };
 
 int main(int argc, char **argv)

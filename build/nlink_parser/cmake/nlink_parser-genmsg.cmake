@@ -99,7 +99,7 @@ add_custom_target(_nlink_parser_generate_messages_check_deps_${_filename}
 
 get_filename_component(_filename "/home/yu/catkin_workspace/src/nlink_parser/msg/LinktrackNodeframe4.msg" NAME_WE)
 add_custom_target(_nlink_parser_generate_messages_check_deps_${_filename}
-  COMMAND ${CATKIN_ENV} ${PYTHON_EXECUTABLE} ${GENMSG_CHECK_DEPS_SCRIPT} "nlink_parser" "/home/yu/catkin_workspace/src/nlink_parser/msg/LinktrackNodeframe4.msg" "nlink_parser/LinktrackNode4Tag:nlink_parser/LinktrackNode4Anchor"
+  COMMAND ${CATKIN_ENV} ${PYTHON_EXECUTABLE} ${GENMSG_CHECK_DEPS_SCRIPT} "nlink_parser" "/home/yu/catkin_workspace/src/nlink_parser/msg/LinktrackNodeframe4.msg" "nlink_parser/LinktrackNode4Anchor:nlink_parser/LinktrackNode4Tag"
 )
 
 get_filename_component(_filename "/home/yu/catkin_workspace/src/nlink_parser/msg/LinktrackNode5.msg" NAME_WE)
@@ -247,7 +247,7 @@ _generate_msg_cpp(nlink_parser
 _generate_msg_cpp(nlink_parser
   "/home/yu/catkin_workspace/src/nlink_parser/msg/LinktrackNodeframe4.msg"
   "${MSG_I_FLAGS}"
-  "/home/yu/catkin_workspace/src/nlink_parser/msg/LinktrackNode4Tag.msg;/home/yu/catkin_workspace/src/nlink_parser/msg/LinktrackNode4Anchor.msg"
+  "/home/yu/catkin_workspace/src/nlink_parser/msg/LinktrackNode4Anchor.msg;/home/yu/catkin_workspace/src/nlink_parser/msg/LinktrackNode4Tag.msg"
   ${CATKIN_DEVEL_PREFIX}/${gencpp_INSTALL_DIR}/nlink_parser
 )
 _generate_msg_cpp(nlink_parser
@@ -472,7 +472,7 @@ _generate_msg_eus(nlink_parser
 _generate_msg_eus(nlink_parser
   "/home/yu/catkin_workspace/src/nlink_parser/msg/LinktrackNodeframe4.msg"
   "${MSG_I_FLAGS}"
-  "/home/yu/catkin_workspace/src/nlink_parser/msg/LinktrackNode4Tag.msg;/home/yu/catkin_workspace/src/nlink_parser/msg/LinktrackNode4Anchor.msg"
+  "/home/yu/catkin_workspace/src/nlink_parser/msg/LinktrackNode4Anchor.msg;/home/yu/catkin_workspace/src/nlink_parser/msg/LinktrackNode4Tag.msg"
   ${CATKIN_DEVEL_PREFIX}/${geneus_INSTALL_DIR}/nlink_parser
 )
 _generate_msg_eus(nlink_parser
@@ -697,7 +697,7 @@ _generate_msg_lisp(nlink_parser
 _generate_msg_lisp(nlink_parser
   "/home/yu/catkin_workspace/src/nlink_parser/msg/LinktrackNodeframe4.msg"
   "${MSG_I_FLAGS}"
-  "/home/yu/catkin_workspace/src/nlink_parser/msg/LinktrackNode4Tag.msg;/home/yu/catkin_workspace/src/nlink_parser/msg/LinktrackNode4Anchor.msg"
+  "/home/yu/catkin_workspace/src/nlink_parser/msg/LinktrackNode4Anchor.msg;/home/yu/catkin_workspace/src/nlink_parser/msg/LinktrackNode4Tag.msg"
   ${CATKIN_DEVEL_PREFIX}/${genlisp_INSTALL_DIR}/nlink_parser
 )
 _generate_msg_lisp(nlink_parser
@@ -922,7 +922,7 @@ _generate_msg_nodejs(nlink_parser
 _generate_msg_nodejs(nlink_parser
   "/home/yu/catkin_workspace/src/nlink_parser/msg/LinktrackNodeframe4.msg"
   "${MSG_I_FLAGS}"
-  "/home/yu/catkin_workspace/src/nlink_parser/msg/LinktrackNode4Tag.msg;/home/yu/catkin_workspace/src/nlink_parser/msg/LinktrackNode4Anchor.msg"
+  "/home/yu/catkin_workspace/src/nlink_parser/msg/LinktrackNode4Anchor.msg;/home/yu/catkin_workspace/src/nlink_parser/msg/LinktrackNode4Tag.msg"
   ${CATKIN_DEVEL_PREFIX}/${gennodejs_INSTALL_DIR}/nlink_parser
 )
 _generate_msg_nodejs(nlink_parser
@@ -1147,7 +1147,7 @@ _generate_msg_py(nlink_parser
 _generate_msg_py(nlink_parser
   "/home/yu/catkin_workspace/src/nlink_parser/msg/LinktrackNodeframe4.msg"
   "${MSG_I_FLAGS}"
-  "/home/yu/catkin_workspace/src/nlink_parser/msg/LinktrackNode4Tag.msg;/home/yu/catkin_workspace/src/nlink_parser/msg/LinktrackNode4Anchor.msg"
+  "/home/yu/catkin_workspace/src/nlink_parser/msg/LinktrackNode4Anchor.msg;/home/yu/catkin_workspace/src/nlink_parser/msg/LinktrackNode4Tag.msg"
   ${CATKIN_DEVEL_PREFIX}/${genpy_INSTALL_DIR}/nlink_parser
 )
 _generate_msg_py(nlink_parser

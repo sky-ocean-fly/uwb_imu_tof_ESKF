@@ -86,6 +86,16 @@ map
 config_loader.h
 /home/yu/catkin_workspace/src/uwb_pose_estimation/include/uwb_pose_estimation/config_loader.h
 
+/home/yu/catkin_workspace/src/uwb_pose_estimation/src/pose_estimation.cpp
+pose_estimation.h
+/home/yu/catkin_workspace/src/uwb_pose_estimation/src/pose_estimation.h
+utils.h
+/home/yu/catkin_workspace/src/uwb_pose_estimation/src/utils.h
+iostream
+-
+cmath
+-
+
 /home/yu/catkin_workspace/src/uwb_pose_estimation/src/uwb_localization_node.cpp
 ros/ros.h
 -

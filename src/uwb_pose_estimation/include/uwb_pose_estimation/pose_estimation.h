@@ -58,6 +58,47 @@ public:
     }
 };
 
+// 固定 roll/pitch，仅优化 yaw 和平移的位姿代价函数（ZYX 欧拉角约定）
+class PoseKnownRollPitchCostFunction {
+private:
+    Eigen::Vector3d _v_j;
+    Eigen::Vector3d _q_j;
+    double _roll;
+    double _pitch;
+
+public:
+    PoseKnownRollPitchCostFunction(const Eigen::Vector3d& v_j,
+                                   const Eigen::Vector3d& q_j,
+                                   double roll_rad,
+                                   double pitch_rad)
+        : _v_j(v_j), _q_j(q_j), _roll(roll_rad), _pitch(pitch_rad) {}
+
+    template <typename T>
+    bool operator()(const T* const yaw, const T* const translation, T* residual) const {
+        const T cr = T(std::cos(_roll));
+        const T sr = T(std::sin(_roll));
+        const T cp = T(std::cos(_pitch));
+        const T sp = T(std::sin(_pitch));
+        const T cy = ceres::cos(yaw[0]);
+        const T sy = ceres::sin(yaw[0]);
+
+        // R = Rz(yaw) * Ry(pitch) * Rx(roll)
+        const T x = T(_q_j.x());
+        const T y = T(_q_j.y());
+        const T z = T(_q_j.z());
+        const T rx = cy * cp * x + (cy * sp * sr - sy * cr) * y
+                   + (cy * sp * cr + sy * sr) * z;
+        const T ry = sy * cp * x + (sy * sp * sr + cy * cr) * y
+                   + (sy * sp * cr - cy * sr) * z;
+        const T rz = -sp * x + cp * sr * y + cp * cr * z;
+
+        residual[0] = T(_v_j.x()) - (rx + translation[0]);
+        residual[1] = T(_v_j.y()) - (ry + translation[1]);
+        residual[2] = T(_v_j.z()) - (rz + translation[2]);
+        return true;
+    }
+};
+
 struct PoseMetrics
 {
     double translation_error;
@@ -80,6 +121,16 @@ public:
         const std::vector<Eigen::Vector3d>& q_j,
         const Eigen::Matrix3d& initial_rotation,
         const Eigen::Vector3d& initial_translation,
+        const ExperimentConfig& config);
+
+    // 将 RPY 的 roll/pitch 作为已知量，只让 Ceres 优化 yaw 和平移。
+    static std::pair<Eigen::Matrix3d, Eigen::Vector3d> estimatePoseCeresKnownRollPitch(
+        const std::vector<Eigen::Vector3d>& v_j,
+        const std::vector<Eigen::Vector3d>& q_j,
+        const Eigen::Matrix3d& initial_rotation,
+        const Eigen::Vector3d& initial_translation,
+        double known_roll_rad,
+        double known_pitch_rad,
         const ExperimentConfig& config);
     
     // 综合估计

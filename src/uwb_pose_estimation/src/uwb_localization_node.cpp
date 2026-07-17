@@ -295,8 +295,6 @@ bool isDataValid()
  */
 void nodeframeCallback(const nlink_parser::LinktrackNodeframe2::ConstPtr &msg)
 {
-    bool should_localize = false;
-
     {
         std::lock_guard<std::mutex> lock(distances_mutex);
 
@@ -322,37 +320,7 @@ void nodeframeCallback(const nlink_parser::LinktrackNodeframe2::ConstPtr &msg)
                 ROS_DEBUG("标签%d -> 基站%d: 距离=%.4f m", tag_id, anchor_id, node.dis);
             }
         }
-
-        // 检查是否所有标签的数据都已收到
-        bool all_tags_ready = true;
-        for (int tag_id : TAG_IDS)
-        {
-            if (distances_cache.find(tag_id) == distances_cache.end())
-            {
-                all_tags_ready = false;
-                break;
-            }
-            // 检查是否所有基站都有数据
-            for (int anchor_id : ANCHOR_IDS)
-            {
-                if (distances_cache[tag_id].find(anchor_id) == distances_cache[tag_id].end())
-                {
-                    all_tags_ready = false;
-                    break;
-                }
-            }
-            if (!all_tags_ready)
-                break;
-        }
-
-        should_localize = all_tags_ready;
     } //出大括号，distances_mutex已经释放
-
-    if (should_localize && isDataValid())   //测试使用，加||1无需获取所有数据也能评估
-    {
-        // 执行位姿估计
-        performLocalization();
-    }
 }
 
 /**
@@ -430,6 +398,25 @@ void mocapRocketCallback(const geometry_msgs::PoseStamped::ConstPtr &msg)
               p_M_BM.x(), p_M_BM.y(), p_M_BM.z());
 }
 
+void localizationTimerCallback(const ros::TimerEvent& event)
+{
+    //检查是否有足够的数据
+    {
+        std::lock_guard<std::mutex> lock(distances_mutex);
+        if(distances_cache.empty()){
+            return;
+        }
+    }
+
+    //检查其他数据是否有效
+    if(!isDataValid()){
+        return;
+    }
+
+    //执行位姿估计
+    performLocalization();
+
+}
 // ============================================================
 // 核心定位算法
 // ============================================================
@@ -654,11 +641,13 @@ void performLocalization()
     pose_config.pose_estimation.linear_solver_type = "DENSE_NORMAL_CHOLESKY";
 
     auto [estimated_rotation_A_B, estimated_translation_A_B] =
-        PoseEstimator::estimatePoseCeres(
+        PoseEstimator::estimatePoseCeresKnownRollPitch(
             estimated_node_positions_A,
             Q_J_B,
             initial_rotation_A_B,
             initial_translation_A_B,
+            roll * M_PI / 180.0,
+            pitch * M_PI / 180.0,
             pose_config
         );
 
@@ -884,6 +873,9 @@ int main(int argc, char **argv)
 
     mocap_truth_pub = nh.advertise<geometry_msgs::PoseStamped>(
         "/mocap_truth_pose", 10);
+
+    ros::Timer localization_timer = nh.createTimer(ros::Duration(0.02),
+                                                    localizationTimerCallback);
 
     ROS_INFO("已订阅话题:");
     ROS_INFO("  - /nlink_linktrack_nodeframe2");

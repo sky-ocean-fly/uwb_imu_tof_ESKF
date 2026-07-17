@@ -107,6 +107,46 @@ std::pair<Eigen::Matrix3d, Eigen::Vector3d> PoseEstimator::estimatePoseCeres(
     return std::make_pair(est_rotation, est_translation);
 }
 
+std::pair<Eigen::Matrix3d, Eigen::Vector3d> PoseEstimator::estimatePoseCeresKnownRollPitch(
+    const std::vector<Eigen::Vector3d>& v_j,
+    const std::vector<Eigen::Vector3d>& q_j,
+    const Eigen::Matrix3d& initial_rotation,
+    const Eigen::Vector3d& initial_translation,
+    double known_roll_rad,
+    double known_pitch_rad,
+    const ExperimentConfig& config) {
+
+    double yaw[1] = {std::atan2(initial_rotation(1, 0), initial_rotation(0, 0))};
+    double translation[3] = {initial_translation.x(), initial_translation.y(),
+                             initial_translation.z()};
+
+    ceres::Problem problem;
+    for (size_t j = 0; j < v_j.size(); ++j) {
+        ceres::CostFunction* cost_function =
+            new ceres::AutoDiffCostFunction<PoseKnownRollPitchCostFunction, 3, 1, 3>(
+                new PoseKnownRollPitchCostFunction(v_j[j], q_j[j],
+                                                   known_roll_rad, known_pitch_rad));
+        problem.AddResidualBlock(cost_function, nullptr, yaw, translation);
+    }
+
+    ceres::Solver::Options options;
+    options.max_num_iterations = config.pose_estimation.max_iterations;
+    options.minimizer_progress_to_stdout = false;
+    options.linear_solver_type = config.pose_estimation.linear_solver_type == "DENSE_QR"
+                                   ? ceres::DENSE_QR
+                                   : ceres::DENSE_NORMAL_CHOLESKY;
+
+    ceres::Solver::Summary summary;
+    ceres::Solve(options, &problem, &summary);
+
+    const Eigen::Matrix3d rotation =
+        (Eigen::AngleAxisd(yaw[0], Eigen::Vector3d::UnitZ()) *
+         Eigen::AngleAxisd(known_pitch_rad, Eigen::Vector3d::UnitY()) *
+         Eigen::AngleAxisd(known_roll_rad, Eigen::Vector3d::UnitX())).toRotationMatrix();
+    return std::make_pair(rotation,
+                          Eigen::Vector3d(translation[0], translation[1], translation[2]));
+}
+
 std::pair<Eigen::Matrix3d, Eigen::Vector3d> PoseEstimator::estimatePose(
     const std::vector<Eigen::Vector3d>& v_j,
     const std::vector<Eigen::Vector3d>& q_j,
