@@ -16,6 +16,9 @@
   <build_depend>visualization_msgs</build_depend>
   <build_depend>nlink_parser</build_depend>
   <build_depend>message_filters</build_depend>
+  <build_depend>imu_mahony</build_depend>
+
+  <build_export_depend>imu_mahony</build_export_depend>
 
   <exec_depend>roscpp</exec_depend>
   <exec_depend>rosgraph_msgs</exec_depend>
@@ -24,5 +27,6 @@
   <exec_depend>visualization_msgs</exec_depend>
   <exec_depend>nlink_parser</exec_depend>
   <exec_depend>message_filters</exec_depend>
+  <exec_depend>imu_mahony</exec_depend>
 
 </package>

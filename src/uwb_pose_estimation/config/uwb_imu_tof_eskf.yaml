@@ -21,15 +21,15 @@ init_from_mocap: false            # 只建议调试时改true；正式实验不�
 tof_vertical_mode: true
 
 imu_queue_size: 100
-imu_sync_slop: 0.01
+imu_sync_slop: 0.05
 max_imu_dt: 0.05
 
 sigma_gyro_A: 0.02
 sigma_gyro_B: 0.02
 sigma_acc_A: 0.20
 sigma_acc_B: 0.20
-sigma_uwb: 0.05
-sigma_tof: 0.005
+sigma_uwb: 0.2
+sigma_tof: 0.02
 
 uwb_residual_gate: 2.0
 tof_residual_gate: 1.0

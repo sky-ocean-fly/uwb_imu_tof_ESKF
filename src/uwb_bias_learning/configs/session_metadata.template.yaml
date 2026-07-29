@@ -1,0 +1,28 @@
+schema_version: 1
+# Required provenance declaration.  Do not infer this from ROS or /use_sim_time.
+# Allowed pairs: physical_experiment/false or synthetic_test/true.
+data_origin: null
+is_synthetic: null
+environment_id: null
+location: null
+operator: null
+los: true
+
+uwb:
+  model: null
+  firmware: null
+  ranging_mode: null
+  transmit_power: null
+  battery: null
+
+mocap:
+  rigid_body_a: null
+  rigid_body_b: null
+  antenna_mount_description: null
+
+conditions:
+  obvious_reflectors: null
+  obstruction_description: none
+  temperature_c: null
+
+notes: ""

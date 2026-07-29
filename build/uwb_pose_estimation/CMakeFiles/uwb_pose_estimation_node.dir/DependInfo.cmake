@@ -26,6 +26,7 @@ set(CMAKE_CXX_TARGET_INCLUDE_PATH
   "/home/yu/catkin_workspace/devel/include"
   "/opt/ros/noetic/include"
   "/opt/ros/noetic/share/xmlrpcpp/cmake/../../../include/xmlrpcpp"
+  "/home/yu/catkin_workspace/src/imu_mahony/include"
   "/usr/include/eigen3"
   )
 

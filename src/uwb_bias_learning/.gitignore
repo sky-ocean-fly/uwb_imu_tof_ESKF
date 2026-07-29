@@ -1,0 +1,22 @@
+# Real and synthetic datasets are generated artifacts. Keep only directory markers.
+data/raw/*
+data/interim/*
+data/processed/*
+data/splits/*
+!data/raw/.gitkeep
+!data/interim/.gitkeep
+!data/processed/.gitkeep
+!data/splits/.gitkeep
+
+outputs/runs/*
+outputs/figures/*
+outputs/reports/*
+!outputs/runs/.gitkeep
+!outputs/figures/.gitkeep
+!outputs/reports/.gitkeep
+
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+*.egg-info/

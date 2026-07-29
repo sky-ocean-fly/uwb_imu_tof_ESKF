@@ -5,6 +5,7 @@
  * 订阅：
  *   /nlink_linktrack_nodeframe2 (nlink_parser::LinktrackNodeframe2) - UWB标签与基站的距离数据
  *   /ground_distance (geometry_msgs::PointStamped) - TOF测量的高度数据（point.y为修正后的垂直地面距离）
+ *   /imu_B/data_raw (sensor_msgs::Imu) - Mahony滤波使用的原始IMU数据
  *
  * 发布：
  *   /optimization_estimated_pose (geometry_msgs::PoseStamped) - 估计的位姿
@@ -19,6 +20,7 @@
 #include <ros/ros.h>
 #include <ros/console.h>
 #include <nlink_parser/LinktrackNodeframe2.h>
+#include <sensor_msgs/Imu.h>
 #include <geometry_msgs/PointStamped.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Point.h>
@@ -36,8 +38,10 @@
 #include <ctime>
 #include <clocale>
 #include <set>
+#include <array>
 
 #include "simulation_geometry.h"
+#include "imu_mahony/imu_mahony.h"
 
 #include "node_localization.h"
 #include "pose_estimation.h"
@@ -110,12 +114,15 @@ static double current_vertical_height = 0.0;
 static bool height_received = false;
 static std::mutex height_mutex;
 
-// IMU RPY 数据缓存
+// 优化节点内部的 Mahony 姿态估计（输出单位：deg）
 static double current_roll = 0.0;
 static double current_pitch = 0.0;
-static double current_yaw = 0.0;
-static bool imu_rpy_received = false;
+static bool mahony_attitude_received = false;
+static bool mahony_has_last_stamp = false;
+static IMU_Mahony mahony_filter;
+static double mahony_max_dt = 0.5;
 static std::mutex imu_mutex;
+static ros::Time mahony_last_stamp;
 static ros::Time last_imu_time;
 
 // ============================================================
@@ -226,9 +233,9 @@ bool isDataValid()
         return false;
     }
 
-    if (!imu_rpy_received)
+    if (!mahony_attitude_received)
     {
-        ROS_WARN_THROTTLE(5.0, "尚未接收到IMU RPY数据");
+        ROS_WARN_THROTTLE(5.0, "Mahony尚未产生有效roll/pitch估计");
         return false;
     }
 
@@ -254,7 +261,7 @@ bool isDataValid()
 
     if ((now - last_imu_time).toSec() > DATA_TIMEOUT)
     {
-        ROS_WARN_THROTTLE(5.0, "IMU数据超时");
+        ROS_WARN_THROTTLE(5.0, "Mahony使用的IMU数据超时");
         return false;
     }
 
@@ -333,21 +340,63 @@ void groundDistanceCallback(const geometry_msgs::PointStamped::ConstPtr &msg)
 }
 
 /**
- * @brief /imu/rpy 话题的回调函数
- *
- * 从消息中提取IMU RPY数据
- * 消息类型为 geometry_msgs::Vector3Stamped，其中 vector.x 为roll，vector.y 为pitch，vector.z 为yaw
+ * @brief 原始IMU回调，在优化节点内部运行Mahony估计roll/pitch
  */
-void imuRpyCallback(const geometry_msgs::Vector3::ConstPtr &msg)
+void imuCallback(const sensor_msgs::Imu::ConstPtr &msg)
 {
     std::lock_guard<std::mutex> lock(imu_mutex);
-    current_roll = msg->x;
-    current_pitch = msg->y;
-    current_yaw = msg->z;
-    imu_rpy_received = true;
-    last_imu_time = ros::Time::now();
-    ROS_DEBUG("IMU RPY: roll=%.2f, pitch=%.2f, yaw=%.2f",
-              current_roll, current_pitch, current_yaw);
+
+    const ros::Time stamp = msg->header.stamp.isZero()
+                                ? ros::Time::now()
+                                : msg->header.stamp;
+
+    if (!mahony_has_last_stamp)
+    {
+        mahony_last_stamp = stamp;
+        mahony_has_last_stamp = true;
+        return;
+    }
+
+    const double dt = (stamp - mahony_last_stamp).toSec();
+    mahony_last_stamp = stamp;
+    if (!std::isfinite(dt) || dt <= 0.0 || dt > mahony_max_dt)
+    {
+        ROS_WARN_THROTTLE(2.0, "Mahony IMU dt异常: %.6f s，跳过本次更新", dt);
+        return;
+    }
+
+    const std::array<float, 3> gyro = {
+        static_cast<float>(msg->angular_velocity.x),
+        static_cast<float>(msg->angular_velocity.y),
+        static_cast<float>(msg->angular_velocity.z)};
+    const std::array<float, 3> acc = {
+        static_cast<float>(msg->linear_acceleration.x),
+        static_cast<float>(msg->linear_acceleration.y),
+        static_cast<float>(msg->linear_acceleration.z)};
+
+    for (std::size_t i = 0; i < gyro.size(); ++i)
+    {
+        if (!std::isfinite(gyro[i]) || !std::isfinite(acc[i]))
+        {
+            ROS_WARN_THROTTLE(2.0, "Mahony收到非有限IMU数据，跳过本次更新");
+            return;
+        }
+    }
+
+    mahony_filter.update(gyro, acc, static_cast<float>(dt));
+    const double roll = static_cast<double>(mahony_filter.getRoll());
+    const double pitch = static_cast<double>(mahony_filter.getPitch());
+    if (!std::isfinite(roll) || !std::isfinite(pitch))
+    {
+        ROS_WARN_THROTTLE(2.0, "Mahony输出非有限roll/pitch，跳过本次更新");
+        return;
+    }
+
+    current_roll = roll;
+    current_pitch = pitch;
+    mahony_attitude_received = true;
+    last_imu_time = stamp;
+    ROS_DEBUG("Mahony姿态: roll=%.2f, pitch=%.2f deg", current_roll, current_pitch);
 }
 
 /**
@@ -505,14 +554,13 @@ void performLocalization()
         vertical_height = current_vertical_height;
     }
 
-    double roll, pitch, yaw;
+    double roll, pitch;
     {
         std::lock_guard<std::mutex> lock(imu_mutex);
         roll = current_roll;   // \phi
         pitch = current_pitch; // \theta
-        yaw = current_yaw;     // \psi
     }
-    ROS_INFO("当前IMU姿态：roll=%.2f, pitch=%.2f, yaw=%.2f deg", roll, pitch, yaw);
+    ROS_INFO("当前Mahony姿态：roll=%.2f, pitch=%.2f deg", roll, pitch);
 
     // Get one immutable complete UWB batch; old measurements are never reused.
     std::map<int, std::map<int, double>> distances;
@@ -870,6 +918,24 @@ int main(int argc, char **argv)
     ros::NodeHandle nh;
     ros::NodeHandle private_nh("~");
 
+    std::string imu_topic;
+    double mahony_kp = 1.0;
+    double mahony_ki = 0.01;
+    private_nh.param<std::string>("imu_topic", imu_topic, "/imu_B/data_raw");
+    private_nh.param<double>("mahony_kp", mahony_kp, 1.0);
+    private_nh.param<double>("mahony_ki", mahony_ki, 0.01);
+    private_nh.param<double>("mahony_max_dt", mahony_max_dt, 0.5);
+
+    if (!std::isfinite(mahony_kp) || mahony_kp < 0.0 ||
+        !std::isfinite(mahony_ki) || mahony_ki < 0.0 ||
+        !std::isfinite(mahony_max_dt) || mahony_max_dt <= 0.0)
+    {
+        ROS_FATAL("Mahony参数无效：要求 kp>=0、ki>=0、max_dt>0");
+        return 1;
+    }
+    mahony_filter = IMU_Mahony(static_cast<float>(mahony_kp),
+                               static_cast<float>(mahony_ki));
+
     ROS_INFO("==========================================");
     ROS_INFO("UWB定位节点启动");
     ROS_INFO("==========================================");
@@ -884,7 +950,7 @@ int main(int argc, char **argv)
     ros::Subscriber height_sub = nh.subscribe(
         "/ground_distance", 10, groundDistanceCallback);
 
-    ros::Subscriber imu_sub = nh.subscribe("/imu/rpy", 10, imuRpyCallback);
+    ros::Subscriber imu_sub = nh.subscribe(imu_topic, 1000, imuCallback);
 
     ros::Subscriber mocap_sub = nh.subscribe(
         "/sim/relative_truth_pose", 10, mocapRocketCallback);
@@ -908,6 +974,8 @@ int main(int argc, char **argv)
     ROS_INFO("已订阅话题:");
     ROS_INFO("  - /nlink_linktrack_nodeframe2");
     ROS_INFO("  - /ground_distance");
+    ROS_INFO("  - %s (优化节点内部Mahony, kp=%.3f, ki=%.3f)",
+             imu_topic.c_str(), mahony_kp, mahony_ki);
     ROS_INFO("  - /sim/relative_truth_pose");
     ROS_INFO("已发布话题:");
     ROS_INFO("  - /optimization_estimated_pose");

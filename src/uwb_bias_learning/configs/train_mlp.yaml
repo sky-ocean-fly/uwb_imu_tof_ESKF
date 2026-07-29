@@ -1,0 +1,35 @@
+schema_version: 1
+feature_set: pose12
+feature_fields:
+  - rel_tx
+  - rel_ty
+  - rel_tz
+  - rel_R00
+  - rel_R01
+  - rel_R02
+  - rel_R10
+  - rel_R11
+  - rel_R12
+  - rel_R20
+  - rel_R21
+  - rel_R22
+target_field: bias_mean
+
+hidden_dims: [64, 64, 32]
+activation: relu
+loss: huber
+huber_delta: 1.0
+learning_rate: 0.001
+weight_decay: 0.0001
+batch_size: 32
+max_epochs: 500
+early_stopping_patience: 40
+seeds: [17, 42, 2026]
+use_bias_sem_weights: false
+
+paths:
+  train_csv: ../data/splits/train.csv
+  val_csv: ../data/splits/val.csv
+  test_csv: ../data/splits/test.csv
+  split_manifest: ../data/splits/splits.json
+  runs_root: ../outputs/runs

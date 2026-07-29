@@ -594,6 +594,8 @@ private:
         r.conservativeResize(row);
 
         Eigen::MatrixXd Rm = sigma_uwb_ * sigma_uwb_ * Eigen::MatrixXd::Identity(row, row);
+        ROS_INFO_THROTTLE(1.0, "[UWB update] sigma_uwb_=%.6f, variance=%.6f, row=%d",
+                          sigma_uwb_, sigma_uwb_ * sigma_uwb_, row);
         measurementUpdate(H, r, Rm, MeasurementMode::FULL);
 
         ros::WallDuration total_elapsed = ros::WallTime::now() - t_start;

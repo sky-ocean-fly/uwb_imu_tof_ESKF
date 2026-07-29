@@ -61,8 +61,6 @@ geometry_msgs/PoseStamped.h
 -
 geometry_msgs/TwistStamped.h
 -
-geometry_msgs/Vector3.h
--
 nlink_parser/LinktrackNodeframe2.h
 -
 nlink_parser/LinktrackNode2.h

@@ -3,6 +3,6 @@ prefix=/home/yu/catkin_workspace/devel
 Name: imu_mahony
 Description: Description of imu_mahony
 Version: 0.0.0
-Cflags: 
-Libs: -L${prefix}/lib 
+Cflags: -I/home/yu/catkin_workspace/src/imu_mahony/include
+Libs: -L${prefix}/lib -limu_mahony_filter
 Requires: nlink_parser

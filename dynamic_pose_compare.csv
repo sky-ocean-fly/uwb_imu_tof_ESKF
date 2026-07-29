@@ -1,1 +1,0 @@
-time,stamp_est,stamp_gt,est_x,est_y,est_z,gt_x,gt_y,gt_z,err_x,err_y,err_z,err_pos_norm,est_roll,est_pitch,est_yaw,gt_roll,gt_pitch,gt_yaw,err_roll,err_pitch,err_yaw,err_rot_deg

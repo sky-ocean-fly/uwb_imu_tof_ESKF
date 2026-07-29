@@ -1,0 +1,33 @@
+schema_version: 1
+data_origin: physical_experiment
+is_synthetic: false
+environment_id: pilot_environment_not_recorded
+location: not_recorded_by_operator
+operator: not_recorded_by_operator
+los: true
+
+uwb:
+  model: not_recorded_by_operator
+  firmware: not_recorded_by_operator
+  ranging_mode: not_recorded_by_operator
+  transmit_power: null
+  battery: null
+
+mocap:
+  rigid_body_a: UWB_A
+  rigid_body_b: UWB_B
+  antenna_mount_description: >-
+    For both A and B, the rigid-body origin is at the UWB antenna center and
+    the rigid-body axes are aligned with the antenna axes, as confirmed by the
+    operator on 2026-07-23.
+
+conditions:
+  obvious_reflectors: not_recorded_by_operator
+  obstruction_description: none; operator confirmed LOS
+  temperature_c: null
+
+notes: >-
+  Gate 2/3 pilot only. The operator explicitly waived environment, location,
+  identity, UWB model, firmware, and ranging-mode metadata before this test.
+  Do not promote this session to the formal training dataset unless the
+  missing provenance is recovered and independently verified.

@@ -147,6 +147,8 @@ if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
   include("/home/yu/catkin_workspace/build/gtest/cmake_install.cmake")
   include("/home/yu/catkin_workspace/build/nlink_parser/cmake_install.cmake")
+  include("/home/yu/catkin_workspace/build/imu_mahony/cmake_install.cmake")
+  include("/home/yu/catkin_workspace/build/uwb_bias_learning/cmake_install.cmake")
   include("/home/yu/catkin_workspace/build/uwb_pose_estimation/cmake_install.cmake")
 
 endif()

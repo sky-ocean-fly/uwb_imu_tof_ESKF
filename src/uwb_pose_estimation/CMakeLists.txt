@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   nlink_parser
   message_filters
 )
+find_package(imu_mahony REQUIRED)
 
 # 查找外部依赖
 find_package(Eigen3 REQUIRED)
@@ -22,13 +23,14 @@ find_package(yaml-cpp REQUIRED)
 
 catkin_package(
   INCLUDE_DIRS include
-  CATKIN_DEPENDS roscpp sensor_msgs geometry_msgs visualization_msgs nlink_parser message_filters
+  CATKIN_DEPENDS roscpp sensor_msgs geometry_msgs visualization_msgs nlink_parser message_filters imu_mahony
   DEPENDS Eigen3 Ceres
 )
 
 include_directories(
   include/uwb_pose_estimation
   ${catkin_INCLUDE_DIRS}
+  ${imu_mahony_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIRS}
   ${CERES_INCLUDE_DIRS}
   ${YAML_CPP_INCLUDE_DIRS}
@@ -64,6 +66,7 @@ add_executable(uwb_localization_sim_node
 )
 target_link_libraries(uwb_localization_sim_node
   ${catkin_LIBRARIES}
+  ${imu_mahony_LIBRARIES}
   ${CERES_LIBRARIES}
   ${YAML_CPP_LIBRARIES}
 )
@@ -90,6 +93,15 @@ add_dependencies(uwb_imu_tof_eskf_sim_node ${${PROJECT_NAME}_EXPORTED_TARGETS} $
 add_executable(sim_data_generator_node src/sim_data_generator_node.cpp)
 target_link_libraries(sim_data_generator_node ${catkin_LIBRARIES})
 add_dependencies(sim_data_generator_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+add_executable(uwb_imu_tof_eskf_fake_height_node
+  src/uwb_imu_tof_eskf_fake_height.cpp)
+target_link_libraries(uwb_imu_tof_eskf_fake_height_node ${catkin_LIBRARIES})
+add_dependencies(uwb_imu_tof_eskf_fake_height_node
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+)
+
 
 # Existing fake IMU node, if retained in the package.
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/fake_imu_node.cpp")

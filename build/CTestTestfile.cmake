@@ -6,4 +6,6 @@
 # testing this directory and lists subdirectories to be tested as well.
 subdirs("gtest")
 subdirs("nlink_parser")
+subdirs("imu_mahony")
+subdirs("uwb_bias_learning")
 subdirs("uwb_pose_estimation")

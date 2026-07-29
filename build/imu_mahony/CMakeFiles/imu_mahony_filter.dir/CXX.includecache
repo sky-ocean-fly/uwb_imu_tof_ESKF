@@ -1,0 +1,18 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/yu/catkin_workspace/src/imu_mahony/include/imu_mahony/imu_mahony.h
+array
+-
+
+/home/yu/catkin_workspace/src/imu_mahony/src/imu_mahony.cpp
+imu_mahony/imu_mahony.h
+/home/yu/catkin_workspace/src/imu_mahony/src/imu_mahony/imu_mahony.h
+cmath
+-
+

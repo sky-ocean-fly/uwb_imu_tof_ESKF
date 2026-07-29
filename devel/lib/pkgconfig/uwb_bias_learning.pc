@@ -1,0 +1,8 @@
+prefix=/home/yu/catkin_workspace/devel
+
+Name: uwb_bias_learning
+Description: Description of uwb_bias_learning
+Version: 0.1.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: geometry_msgs nlink_parser rosbag rosgraph rospy rostopic std_msgs

@@ -84,7 +84,7 @@ if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_
      NOT IS_SYMLINK "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation/uwb_localization_sim_node")
     file(RPATH_CHANGE
          FILE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation/uwb_localization_sim_node"
-         OLD_RPATH "/opt/ros/noetic/lib:"
+         OLD_RPATH "/opt/ros/noetic/lib:/home/yu/catkin_workspace/devel/lib:"
          NEW_RPATH "")
     if(CMAKE_INSTALL_DO_STRIP)
       execute_process(COMMAND "/usr/bin/strip" "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation/uwb_localization_sim_node")

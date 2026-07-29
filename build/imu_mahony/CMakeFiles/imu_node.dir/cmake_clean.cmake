@@ -1,7 +1,6 @@
 file(REMOVE_RECURSE
   "/home/yu/catkin_workspace/devel/lib/imu_mahony/imu_node"
   "/home/yu/catkin_workspace/devel/lib/imu_mahony/imu_node.pdb"
-  "CMakeFiles/imu_node.dir/src/imu_mahony.cpp.o"
   "CMakeFiles/imu_node.dir/src/imu_node.cpp.o"
 )
 

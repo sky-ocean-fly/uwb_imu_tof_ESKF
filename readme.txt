@@ -1,0 +1,14 @@
+uwb_pose_estimation内部
+uwb_imu_tof_eskf_fake_height.cpp是最新版
+能在假高度和没有假高度之间切换，仿真没有重力观测
+
+uwb_imu_tof_eskf_sim_node.cpp是次版
+没有假高度模式
+
+uwb_imu_tof_eskf_node.cpp是最新的实物代码
+能在假高度和没有假高度之间切换，实物有重力观测
+
+
+uwb_pose_estimation外部
+uwb_imu_tof_eskf_node.cpp是次版实物代码
+能在假高度和没有假高度之间切换，没有重力观测

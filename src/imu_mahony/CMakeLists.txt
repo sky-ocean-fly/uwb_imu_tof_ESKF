@@ -14,6 +14,8 @@ message(STATUS "catkin_LIBRARIES = ${catkin_LIBRARIES}")
 message(STATUS "catkin_EXPORTED_TARGETS = ${catkin_EXPORTED_TARGETS}")
 
 catkin_package(
+  INCLUDE_DIRS include
+  LIBRARIES imu_mahony_filter
   CATKIN_DEPENDS nlink_parser
 )
 
@@ -22,13 +24,22 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-# ---- IMU Mahony 节点 ----
-add_executable(imu_node
-  src/imu_node.cpp
+# ---- 可复用的 IMU Mahony 滤波库 ----
+add_library(imu_mahony_filter
   src/imu_mahony.cpp
 )
 
+target_link_libraries(imu_mahony_filter
+  ${catkin_LIBRARIES}
+)
+
+# ---- IMU Mahony 节点 ----
+add_executable(imu_node
+  src/imu_node.cpp
+)
+
 target_link_libraries(imu_node
+  imu_mahony_filter
   ${catkin_LIBRARIES}
 )
 
@@ -65,6 +76,12 @@ add_dependencies(uwb_sync_recorder
   ${catkin_EXPORTED_TARGETS}
 )
 
-install(TARGETS imu_node ground_distance_node uwb_sync_recorder
+install(TARGETS imu_mahony_filter imu_node ground_distance_node uwb_sync_recorder
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
 )

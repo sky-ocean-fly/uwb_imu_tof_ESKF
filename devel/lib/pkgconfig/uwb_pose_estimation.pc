@@ -5,4 +5,4 @@ Description: Description of uwb_pose_estimation
 Version: 0.0.1
 Cflags: -I/home/yu/catkin_workspace/src/uwb_pose_estimation/include
 Libs: -L${prefix}/lib 
-Requires: roscpp sensor_msgs geometry_msgs visualization_msgs nlink_parser message_filters
+Requires: roscpp sensor_msgs geometry_msgs visualization_msgs nlink_parser message_filters imu_mahony

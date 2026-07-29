@@ -26,11 +26,14 @@ sigma_acc_A: 0.020
 sigma_acc_B: 0.020
 
 # These are per-measurement standard deviations.
-sigma_uwb: 0.1  #0.033 #0.1表示有正偏置的时候
+sigma_uwb: 20.0  #0.033 #0.1表示有正偏置的时候
 sigma_tof: 0.020
 
 uwb_residual_gate: 2.0
 tof_residual_gate: 1.0
+
+use_uwb_fake_height: true
+uwb_fake_height_min_information: 1.0e-8
 
 # Used only if init_from_pose_topic=false.
 init_p_x: 0.8

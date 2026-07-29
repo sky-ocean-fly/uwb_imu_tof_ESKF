@@ -2,6 +2,10 @@
   <arg name="generator_config" default="$(find uwb_pose_estimation)/config/sim_data_generator.yaml" />
   <arg name="eskf_config" default="$(find uwb_pose_estimation)/config/uwb_imu_tof_eskf_sim.yaml" />
   <arg name="run_loggers" default="true" />
+  <arg name="optimization_imu_topic" default="/imu_B/data_raw" />
+  <arg name="mahony_kp" default="1.0" />
+  <arg name="mahony_ki" default="0.01" />
+  <arg name="mahony_max_dt" default="0.5" />
 
   <!-- The generator publishes /clock from a WallTimer. -->
   <param name="use_sim_time" value="true" />
@@ -17,15 +21,36 @@
   <node pkg="uwb_pose_estimation"
         type="uwb_localization_sim_node"
         name="uwb_localization_sim_node"
-        output="screen" />
+        output="screen">
+    <param name="imu_topic" value="$(arg optimization_imu_topic)" />
+    <param name="mahony_kp" value="$(arg mahony_kp)" />
+    <param name="mahony_ki" value="$(arg mahony_ki)" />
+    <param name="mahony_max_dt" value="$(arg mahony_max_dt)" />
+  </node>
 
-  <node pkg="uwb_pose_estimation"
+  <!-- 原来的ESKF代码（没有假高度） -->
+  <!-- <node pkg="uwb_pose_estimation"
         type="uwb_imu_tof_eskf_sim_node"
         name="uwb_imu_tof_eskf_sim_node"
         output="screen">
     <rosparam command="load" file="$(arg eskf_config)" />
     <param name="publish_rate_hz" value="50.0" />
-  </node>
+  </node> -->
+
+    <!-- 假高度ESKF -->
+    <node pkg="uwb_pose_estimation"
+          type="uwb_imu_tof_eskf_fake_height_node"
+          name="eskf_fake_height"
+          output="screen">
+
+        <rosparam command="load" file="$(arg eskf_config)" />
+        <param name="use_uwb_fake_height" value="false"/>
+        <param name="uwb_fake_height_min_information" value="1e-8"/>
+        <param name="eskf_pose_topic"
+               value="/eskf_fake_height/estimated_pose"/>
+        <param name="mocap_truth_topic"
+               value="/eskf_fake_height/mocap_truth_pose"/>
+    </node>
 
   <group if="$(arg run_loggers)">
     <node pkg="uwb_pose_estimation"
@@ -34,7 +59,7 @@
           output="screen">
       <param name="est_topic" value="/optimization_estimated_pose" />
       <param name="gt_topic" value="/sim/relative_truth_pose" />
-      <param name="csv_path" value="$(find uwb_pose_estimation)/sim_result/optimization_pose_compare2.csv" />
+      <param name="csv_path" value="$(find uwb_pose_estimation)/sim_result/optimization_pose_compare1.csv" />
       <param name="queue_size" value="200" />
       <param name="sync_slop" value="0.03" />
       <param name="method_name" value="优化法" />
@@ -47,9 +72,9 @@
           type="pose_compare_logger"
           name="pose_compare_logger_eskf"
           output="screen">
-      <param name="est_topic" value="/eskf_estimated_pose" />
+      <param name="est_topic" value="/eskf_fake_height/estimated_pose" />
       <param name="gt_topic" value="/sim/relative_truth_pose" />
-      <param name="csv_path" value="$(find uwb_pose_estimation)/sim_result/eskf_pose_compare2.csv" />
+      <param name="csv_path" value="$(find uwb_pose_estimation)/sim_result/eskf_pose_compare1.csv" />
       <param name="queue_size" value="200" />
       <param name="sync_slop" value="0.03" />
       <param name="method_name" value="ESKF" />

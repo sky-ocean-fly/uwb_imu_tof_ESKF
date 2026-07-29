@@ -14,8 +14,16 @@
  *
  * Measurement:
  *   UWB: rho_ij = ||p + R b_j - a_i||
+ *   UWB fake-height mode:
+ *     r = H_x delta_x + H_h delta_h_fake + n.
+ *     delta_h_fake is eliminated with a Schur complement for every UWB batch
+ *     and is never injected into the real p_z state.
  *   ToF vertical height mode: h = e3^T (p + R c_T)
  *   ToF slant mode:          h = - e3^T(p + R c_T) / e3^T(R s_T)
+ *   Gravity direction:
+ *     r_g = N^T (u_A - R u_B), H_g = [-N^T (R u_B)^, 0, 0].
+ *     Both accelerometer magnitudes and the 2-D innovation are gated before
+ *     the update, so linear acceleration is not blindly treated as gravity.
  */
 
 #include <ros/ros.h>
@@ -72,6 +80,36 @@ Eigen::Matrix3d expSO3(const Eigen::Vector3d &phi)
     const double A = std::sin(theta) / theta;
     const double B = (1.0 - std::cos(theta)) / (theta * theta);
     return Eigen::Matrix3d::Identity() + A * W + B * W2;
+}
+
+// SO(3)左雅可比。左乘误差注入后，协方差重置需要使用该雅可比。
+Eigen::Matrix3d leftJacobianSO3(const Eigen::Vector3d &phi)
+{
+    const double theta = phi.norm();
+    const Eigen::Matrix3d W = skew(phi);
+    const Eigen::Matrix3d W2 = W * W;
+
+    if (theta < 1e-8)
+    {
+        return Eigen::Matrix3d::Identity() + 0.5 * W + (1.0 / 6.0) * W2;
+    }
+
+    const double theta2 = theta * theta;
+    const double A = (1.0 - std::cos(theta)) / theta2;
+    const double B = (theta - std::sin(theta)) / (theta2 * theta);
+    return Eigen::Matrix3d::Identity() + A * W + B * W2;
+}
+
+// 构造单位向量h处的二维切平面正交基N=[n1 n2]，满足N^T h=0。
+Eigen::Matrix<double, 3, 2> tangentBasis(const Eigen::Vector3d &h)
+{
+    const Eigen::Vector3d n1 = h.unitOrthogonal();
+    const Eigen::Vector3d n2 = h.cross(n1).normalized();
+
+    Eigen::Matrix<double, 3, 2> N;
+    N.col(0) = n1;
+    N.col(1) = n2;
+    return N;
 }
 
 Eigen::Matrix3d eulerZYXDegToRot(double yaw_deg, double pitch_deg, double roll_deg)
@@ -209,6 +247,24 @@ public:
         ROS_INFO("  ToF话题: %s", tof_topic_.c_str());
         ROS_INFO("  IMU A话题: %s", imu_a_topic_.c_str());
         ROS_INFO("  IMU B话题: %s", imu_b_topic_.c_str());
+        ROS_INFO("  UWB假高度: %s", use_uwb_fake_height_ ? "启用" : "关闭");
+        ROS_INFO("  重力方向观测: %s", use_gravity_observation_ ? "启用" : "关闭");
+        if (use_gravity_observation_)
+        {
+            if (gravity_update_rate_hz_ > 0.0)
+            {
+                ROS_INFO("    更新频率: %.1f Hz, 模长门限(A/B): %.3f/%.3f, 二维NIS门限: %.3f",
+                         gravity_update_rate_hz_,
+                         gravity_accel_gate_A_, gravity_accel_gate_B_,
+                         gravity_nis_gate_);
+            }
+            else
+            {
+                ROS_INFO("    更新频率: 每对IMU, 模长门限(A/B): %.3f/%.3f, 二维NIS门限: %.3f",
+                         gravity_accel_gate_A_, gravity_accel_gate_B_,
+                         gravity_nis_gate_);
+            }
+        }
         ROS_INFO("  初始化: %s", init_from_pose_topic_ ? init_pose_topic_.c_str() : (init_from_mocap_ ? "mocap" : "params"));
     }
 
@@ -233,6 +289,8 @@ private:
         pnh_.param<bool>("init_from_pose_topic", init_from_pose_topic_, true);
         pnh_.param<bool>("init_from_mocap", init_from_mocap_, false);
         pnh_.param<bool>("tof_vertical_mode", tof_vertical_mode_, true);
+        pnh_.param<bool>("use_uwb_fake_height", use_uwb_fake_height_, true);
+        pnh_.param<bool>("use_gravity_observation", use_gravity_observation_, true);
 
         pnh_.param<int>("imu_queue_size", imu_queue_size_, 100);
         pnh_.param<double>("imu_sync_slop", imu_sync_slop_, 0.01);
@@ -247,6 +305,19 @@ private:
 
         pnh_.param<double>("uwb_residual_gate", uwb_residual_gate_, 2.0);
         pnh_.param<double>("tof_residual_gate", tof_residual_gate_, 1.0);
+        pnh_.param<double>("uwb_fake_height_min_information",
+                           uwb_fake_height_min_information_, 1e-8);
+
+        // 重力方向观测参数。sigma_acc_*_gravity是单次加速度样本的标准差，
+        // 与协方差传播使用的连续时间噪声密度sigma_acc_*含义不同。
+        pnh_.param<double>("gravity_magnitude", gravity_magnitude_, 9.80665);
+        pnh_.param<double>("gravity_accel_gate_A", gravity_accel_gate_A_, 0.10);
+        pnh_.param<double>("gravity_accel_gate_B", gravity_accel_gate_B_, 0.10);
+        pnh_.param<double>("sigma_acc_A_gravity", sigma_acc_A_gravity_, 0.20);
+        pnh_.param<double>("sigma_acc_B_gravity", sigma_acc_B_gravity_, 0.20);
+        pnh_.param<double>("sigma_gravity_model", sigma_gravity_model_, 0.03);
+        pnh_.param<double>("gravity_nis_gate", gravity_nis_gate_, 9.210);
+        pnh_.param<double>("gravity_update_rate_hz", gravity_update_rate_hz_, 50.0);
 
         pnh_.param<double>("init_p_x", init_p_x_, 0.0);
         pnh_.param<double>("init_p_y", init_p_y_, 0.0);
@@ -258,6 +329,47 @@ private:
         pnh_.param<double>("init_sigma_angle", init_sigma_angle_, 0.30);
         pnh_.param<double>("init_sigma_velocity", init_sigma_velocity_, 0.50);
         pnh_.param<double>("init_sigma_position", init_sigma_position_, 0.50);
+
+        if (!std::isfinite(gravity_magnitude_) || gravity_magnitude_ <= 0.0)
+        {
+            ROS_WARN("gravity_magnitude必须为正数，改用9.80665 m/s^2");
+            gravity_magnitude_ = 9.80665;
+        }
+        if (!std::isfinite(gravity_accel_gate_A_) || gravity_accel_gate_A_ <= 0.0)
+        {
+            ROS_WARN("gravity_accel_gate_A必须为正数，改用0.10");
+            gravity_accel_gate_A_ = 0.10;
+        }
+        if (!std::isfinite(gravity_accel_gate_B_) || gravity_accel_gate_B_ <= 0.0)
+        {
+            ROS_WARN("gravity_accel_gate_B必须为正数，改用0.10");
+            gravity_accel_gate_B_ = 0.10;
+        }
+        if (!std::isfinite(sigma_acc_A_gravity_) || sigma_acc_A_gravity_ < 0.0)
+        {
+            ROS_WARN("sigma_acc_A_gravity不能为负数，改用0.20 m/s^2");
+            sigma_acc_A_gravity_ = 0.20;
+        }
+        if (!std::isfinite(sigma_acc_B_gravity_) || sigma_acc_B_gravity_ < 0.0)
+        {
+            ROS_WARN("sigma_acc_B_gravity不能为负数，改用0.20 m/s^2");
+            sigma_acc_B_gravity_ = 0.20;
+        }
+        if (!std::isfinite(sigma_gravity_model_) || sigma_gravity_model_ <= 0.0)
+        {
+            ROS_WARN("sigma_gravity_model必须为正数，改用0.03");
+            sigma_gravity_model_ = 0.03;
+        }
+        if (!std::isfinite(gravity_nis_gate_))
+        {
+            ROS_WARN("gravity_nis_gate无效，改用9.210");
+            gravity_nis_gate_ = 9.210;
+        }
+        if (!std::isfinite(gravity_update_rate_hz_) || gravity_update_rate_hz_ < 0.0)
+        {
+            ROS_WARN("gravity_update_rate_hz不能为负数，改用50 Hz");
+            gravity_update_rate_hz_ = 50.0;
+        }
     }
 
     void loadGeometry()
@@ -303,6 +415,7 @@ private:
         p_ = Eigen::Vector3d(init_p_x_, init_p_y_, init_p_z_);
         initialized_ = true;
         has_last_imu_pair_time_ = false;
+        has_last_gravity_attempt_time_ = false;
         ROS_WARN("ESKF使用参数初始化：p=[%.3f %.3f %.3f], yaw/pitch/roll=[%.2f %.2f %.2f] deg",
                  p_.x(), p_.y(), p_.z(), init_yaw_deg_, init_pitch_deg_, init_roll_deg_);
     }
@@ -347,6 +460,7 @@ private:
         v_.setZero();
         initialized_ = true;
         has_last_imu_pair_time_ = false;
+        has_last_gravity_attempt_time_ = false;
         resetCovariance();
 
         ROS_WARN("ESKF已用初始位姿话题初始化：%s", init_pose_topic_.c_str());
@@ -376,6 +490,7 @@ private:
             v_.setZero();
             initialized_ = true;
             has_last_imu_pair_time_ = false;
+            has_last_gravity_attempt_time_ = false;
             resetCovariance();
             ROS_WARN("ESKF已用动捕真值初始化。该模式只建议用于调试，不建议作为正式实验结果。 ");
         }
@@ -395,10 +510,23 @@ private:
         ros::Time stamp;
         stamp.fromSec((stamp_a.toSec() + stamp_b.toSec()) * 0.5);
 
+        const Eigen::Vector3d omega_A = vec3FromImuAngular(imu_a);
+        const Eigen::Vector3d omega_B = vec3FromImuAngular(imu_b);
+        const Eigen::Vector3d f_A = vec3FromImuLinearAcc(imu_a);
+        const Eigen::Vector3d f_B = vec3FromImuLinearAcc(imu_b);
+
+        if (!omega_A.allFinite() || !omega_B.allFinite() ||
+            !f_A.allFinite() || !f_B.allFinite())
+        {
+            ROS_WARN_THROTTLE(2.0, "IMU数据含NaN/Inf，跳过本次传播和重力更新");
+            return;
+        }
+
         if (!has_last_imu_pair_time_)
         {
             last_imu_pair_time_ = stamp;
             has_last_imu_pair_time_ = true;
+            maybeUpdateGravity(stamp, f_A, f_B);
             return;
         }
 
@@ -411,16 +539,14 @@ private:
             return;
         }
 
-        const Eigen::Vector3d omega_A = vec3FromImuAngular(imu_a);
-        const Eigen::Vector3d omega_B = vec3FromImuAngular(imu_b);
-        const Eigen::Vector3d f_A = vec3FromImuLinearAcc(imu_a);
-        const Eigen::Vector3d f_B = vec3FromImuLinearAcc(imu_b);
-
         ros::WallTime t_predict_start = ros::WallTime::now();
         propagate(omega_A, omega_B, f_A, f_B, dt);
         ros::WallDuration predict_elapsed = ros::WallTime::now() - t_predict_start;
         ROS_INFO("[ESKF计时] 预测(propagate) 耗时: %.3f ms, dt=%.3f ms",
                  predict_elapsed.toSec() * 1e3, dt * 1e3);
+
+        // 使用传播后的名义姿态构造当前时刻的重力方向创新。
+        maybeUpdateGravity(stamp, f_A, f_B);
     }
 
     void propagate(const Eigen::Vector3d &omega_A,
@@ -467,6 +593,137 @@ private:
         const Matrix9d Qd = G * Qc * G.transpose() * dt;
         P_ = Phi * P_ * Phi.transpose() + Qd;
         symmetrizeCovariance();
+    }
+
+    void maybeUpdateGravity(const ros::Time &stamp,
+                            const Eigen::Vector3d &f_A,
+                            const Eigen::Vector3d &f_B)
+    {
+        if (!use_gravity_observation_)
+            return;
+
+        // 0 Hz表示对每一对同步IMU样本都尝试更新；正数用于限制伪观测频率，
+        // 避免高频振动相关样本被当成大量相互独立的重力观测。
+        if (gravity_update_rate_hz_ > 0.0 &&
+            has_last_gravity_attempt_time_)
+        {
+            const double elapsed = (stamp - last_gravity_attempt_time_).toSec();
+            const double min_interval = 1.0 / gravity_update_rate_hz_;
+            if (elapsed >= 0.0 && elapsed < min_interval)
+                return;
+        }
+
+        last_gravity_attempt_time_ = stamp;
+        has_last_gravity_attempt_time_ = true;
+        updateGravity(f_A, f_B);
+    }
+
+    void updateGravity(const Eigen::Vector3d &f_A,
+                       const Eigen::Vector3d &f_B)
+    {
+        const double norm_A = f_A.norm();
+        const double norm_B = f_B.norm();
+        if (!std::isfinite(norm_A) || !std::isfinite(norm_B) ||
+            norm_A < 1e-6 || norm_B < 1e-6)
+        {
+            ROS_WARN_THROTTLE(2.0, "加速度计模长无效，跳过重力方向更新");
+            return;
+        }
+
+        // 双IMU线加速度门控：两块IMU都必须接近g，任一不满足就拒绝。
+        const double epsilon_A =
+            std::fabs(norm_A - gravity_magnitude_) / gravity_magnitude_;
+        const double epsilon_B =
+            std::fabs(norm_B - gravity_magnitude_) / gravity_magnitude_;
+        if (epsilon_A >= gravity_accel_gate_A_ ||
+            epsilon_B >= gravity_accel_gate_B_)
+        {
+            ROS_DEBUG_THROTTLE(
+                1.0,
+                "重力更新被模长门控拒绝: |f_A|=%.3f, |f_B|=%.3f, "
+                "epsilon_A=%.3f, epsilon_B=%.3f",
+                norm_A, norm_B, epsilon_A, epsilon_B);
+            return;
+        }
+
+        const Eigen::Vector3d u_A = f_A / norm_A;
+        const Eigen::Vector3d u_B = f_B / norm_B;
+        const Eigen::Vector3d h = (R_ * u_B).normalized();
+        const Eigen::Matrix<double, 3, 2> N = tangentBasis(h);
+
+        // 归一化重力方向只有两个独立自由度，因此只保留预测方向切平面
+        // 内的二维残差。该观测对绕重力方向的相对yaw不提供直接信息。
+        const Eigen::Vector2d residual =
+            N.transpose() * (u_A - h);
+
+        Eigen::Matrix<double, 2, 9> H;
+        H.setZero();
+        H.block<2, 3>(0, 0) = -N.transpose() * skew(h);
+
+        // 归一化映射的一阶雅可比：
+        // J=(I-u*u^T)/|f|。不能把归一化后的方向噪声直接当作普通3维
+        // 各向同性白噪声，而应先传播两块加速度计的噪声，再投影到切平面。
+        const Eigen::Matrix3d I3 = Eigen::Matrix3d::Identity();
+        const Eigen::Matrix3d J_A =
+            (I3 - u_A * u_A.transpose()) / norm_A;
+        const Eigen::Matrix3d J_B =
+            (I3 - u_B * u_B.transpose()) / norm_B;
+        const Eigen::Matrix3d Sigma_u_A =
+            sigma_acc_A_gravity_ * sigma_acc_A_gravity_ *
+            (J_A * J_A.transpose());
+        const Eigen::Matrix3d Sigma_u_B =
+            sigma_acc_B_gravity_ * sigma_acc_B_gravity_ *
+            (J_B * J_B.transpose());
+        const Eigen::Matrix3d Sigma_residual_3d =
+            Sigma_u_A + R_ * Sigma_u_B * R_.transpose();
+
+        Eigen::Matrix2d R_g =
+            N.transpose() * Sigma_residual_3d * N;
+        R_g += sigma_gravity_model_ * sigma_gravity_model_ *
+               Eigen::Matrix2d::Identity();
+        R_g = 0.5 * (R_g + R_g.transpose());
+
+        // 二维NIS门控可进一步拒绝“模长仍接近g、但方向已被水平
+        // 线加速度污染”的样本。9.210对应2自由度卡方分布99%分位点。
+        const Eigen::Matrix2d S = H * P_ * H.transpose() + R_g;
+        Eigen::LDLT<Eigen::Matrix2d> ldlt(S);
+        if (ldlt.info() != Eigen::Success)
+        {
+            ROS_WARN_THROTTLE(2.0, "重力观测创新协方差分解失败，跳过更新");
+            return;
+        }
+
+        const Eigen::Vector2d solved_residual = ldlt.solve(residual);
+        const double nis = residual.dot(solved_residual);
+        if (!solved_residual.allFinite() || !std::isfinite(nis) || nis < 0.0)
+        {
+            ROS_WARN_THROTTLE(2.0, "重力观测NIS无效，跳过更新");
+            return;
+        }
+        if (gravity_nis_gate_ > 0.0 && nis > gravity_nis_gate_)
+        {
+            ROS_DEBUG_THROTTLE(
+                1.0,
+                "重力更新被NIS门控拒绝: NIS=%.3f > %.3f, "
+                "二维残差=[%.4f %.4f]",
+                nis, gravity_nis_gate_, residual.x(), residual.y());
+            return;
+        }
+
+        Eigen::MatrixXd H_dynamic(2, 9);
+        H_dynamic = H;
+        Eigen::VectorXd r_dynamic(2);
+        r_dynamic = residual;
+        Eigen::MatrixXd R_dynamic(2, 2);
+        R_dynamic = R_g;
+        measurementUpdate(H_dynamic, r_dynamic, R_dynamic,
+                          MeasurementMode::FULL);
+
+        ROS_DEBUG_THROTTLE(
+            1.0,
+            "重力方向更新通过: NIS=%.3f, |f_A|=%.3f, |f_B|=%.3f, "
+            "二维残差=[%.4f %.4f]",
+            nis, norm_A, norm_B, residual.x(), residual.y());
     }
 
     void uwbCallback(const nlink_parser::LinktrackNodeframe2::ConstPtr &msg)
@@ -544,14 +801,16 @@ private:
     }
 
     void updateUwb(const ros::Time &stamp,
-               const DistanceMap &distances)
+                   const DistanceMap &distances)
     {
         ros::WallTime t_start = ros::WallTime::now();
 
         const int max_rows = static_cast<int>(tag_ids_.size() * anchor_ids_.size());
         Eigen::MatrixXd H(max_rows, 9);
+        Eigen::VectorXd H_fake_height(max_rows);
         Eigen::VectorXd r(max_rows);
         H.setZero();
+        H_fake_height.setZero();
         r.setZero();
 
         int row = 0;
@@ -594,11 +853,22 @@ private:
                 H.block<1, 3>(row, 0) = -u.transpose() * skew(Rb);
                 // H.block<1, 3>(row, 0).setZero();//UWB不修正姿态
                 H.block<1, 3>(row, 3).setZero();
-                H.block<1, 3>(row, 6) = u.transpose();
-                // UWB 只修正 p_x, p_y，不直接修正 p_z
-                // H(row, 6) = u.x();
-                // H(row, 7) = u.y();
-                // H(row, 8) = 0.0;
+                if (use_uwb_fake_height_)
+                {
+                    /*
+                     * 真实误差状态保留完整姿态、速度交叉项和p_x、p_y更新；
+                     * u_z进入本批次独立的假高度delta_h_fake。假高度通过
+                     * Schur补消去，不会注入真实p_z。
+                     */
+                    H.block<1, 2>(row, 6) = u.head<2>().transpose();
+                    H(row, 8) = 0.0;
+                    H_fake_height(row) = u.z();
+                }
+                else
+                {
+                    // 关闭假高度时恢复普通UWB完整位姿更新。
+                    H.block<1, 3>(row, 6) = u.transpose();
+                }
                 r(row) = residual;
                 ++row;
             }
@@ -611,14 +881,100 @@ private:
         }
 
         H.conservativeResize(row, Eigen::NoChange);
+        H_fake_height.conservativeResize(row);
         r.conservativeResize(row);
 
         Eigen::MatrixXd Rm = sigma_uwb_ * sigma_uwb_ * Eigen::MatrixXd::Identity(row, row);
-        measurementUpdate(H, r, Rm, MeasurementMode::UWB_XY_ONLY);
+        ROS_INFO_THROTTLE(1.0, "[UWB update] sigma_uwb_=%.6f, variance=%.6f, row=%d",
+                          sigma_uwb_, sigma_uwb_ * sigma_uwb_, row);
+        if (use_uwb_fake_height_)
+        {
+            updateUwbWithFakeHeight(H, H_fake_height, r, Rm);
+        }
+        else
+        {
+            measurementUpdate(H, r, Rm, MeasurementMode::FULL);
+        }
 
         ros::WallDuration total_elapsed = ros::WallTime::now() - t_start;
         ROS_INFO("[ESKF计时] UWB更新全周期 耗时: %.3f ms, 有效测量数=%d",
                  total_elapsed.toSec() * 1e3, row);
+    }
+
+    void updateUwbWithFakeHeight(const Eigen::MatrixXd &H_x,
+                                 const Eigen::VectorXd &H_fake_height,
+                                 const Eigen::VectorXd &r,
+                                 const Eigen::MatrixXd &Rm)
+    {
+        /*
+         * 先使用Rm = L L^T白化测量：
+         *   r_w = L^-1 r, H_w = L^-1 H_x, h_w = L^-1 H_fake.
+         *
+         * 再投影到假高度雅可比h_w的正交补：
+         *   Pi = I - h_w (h_w^T h_w)^-1 h_w^T.
+         *
+         * 这样等价于联合求解真实误差状态和本批次假高度，再通过
+         * Schur补消去假高度；假高度不会成为持久状态，也不会注入真实p_z。
+         */
+        if (H_x.rows() == 0 ||
+            H_fake_height.size() != H_x.rows() ||
+            r.size() != H_x.rows() ||
+            Rm.rows() != H_x.rows() ||
+            Rm.cols() != H_x.rows())
+        {
+            ROS_ERROR_THROTTLE(2.0, "UWB假高度更新维度不一致，跳过本批次");
+            return;
+        }
+
+        Eigen::LLT<Eigen::MatrixXd> llt(Rm);
+        if (llt.info() != Eigen::Success)
+        {
+            ROS_ERROR_THROTTLE(2.0, "UWB测量协方差Cholesky分解失败，跳过本批次");
+            return;
+        }
+
+        const Eigen::MatrixXd H_w = llt.matrixL().solve(H_x);
+        const Eigen::VectorXd r_w = llt.matrixL().solve(r);
+        const Eigen::VectorXd h_w = llt.matrixL().solve(H_fake_height);
+        const double fake_height_information = h_w.squaredNorm();
+
+        if (!std::isfinite(fake_height_information) ||
+            fake_height_information < uwb_fake_height_min_information_)
+        {
+            /*
+             * 当前几何对竖直位移几乎不敏感，无法可靠估计假高度。
+             * 此时退化为使用已经删除真实p_z列的UWB更新，并继续禁止
+             * UWB向真实p_z注入修正。
+             */
+            ROS_WARN_THROTTLE(
+                2.0,
+                "UWB假高度不可观：H_fake^T R^-1 H_fake=%.3e，退化为不更新真实p_z",
+                fake_height_information);
+            measurementUpdate(H_x, r, Rm, MeasurementMode::UWB_FAKE_HEIGHT);
+            return;
+        }
+
+        const Eigen::MatrixXd projector =
+            Eigen::MatrixXd::Identity(H_x.rows(), H_x.rows()) -
+            (h_w * h_w.transpose()) / fake_height_information;
+
+        const Eigen::MatrixXd H_perp = projector * H_w;
+        const Eigen::VectorXd r_perp = projector * r_w;
+        const Eigen::MatrixXd R_perp =
+            Eigen::MatrixXd::Identity(H_x.rows(), H_x.rows());
+
+        const Vector9d dx =
+            measurementUpdate(H_perp, r_perp, R_perp,
+                              MeasurementMode::UWB_FAKE_HEIGHT);
+
+        // 仅用于诊断输出；该临时量不进入真实状态。
+        const double delta_h_fake =
+            h_w.dot(r_w - H_w * dx) / fake_height_information;
+
+        ROS_INFO(
+            "UWB假高度: delta_h_fake=%.4f m（仅本批次使用并丢弃）, "
+            "delta_p_xy=[%.4f %.4f] m, real_p_z=%.4f m",
+            delta_h_fake, dx(6), dx(7), p_.z());
     }
 
     void tofCallback(const geometry_msgs::PointStamped::ConstPtr &msg)
@@ -679,7 +1035,7 @@ private:
         Eigen::MatrixXd Rm(1, 1);
         Rm(0, 0) = sigma_tof_ * sigma_tof_;
 
-        measurementUpdate(Hdyn, r, Rm, MeasurementMode::TOF_Z_VZ_ONLY);  // ToF 解锁姿态，允许修正 roll/pitch
+        measurementUpdate(Hdyn, r, Rm, MeasurementMode::FULL);  // ToF 解锁姿态，允许修正 roll/pitch
 
         ros::WallDuration total_elapsed = ros::WallTime::now() - t_start;
         ROS_INFO("[ESKF计时] ToF更新全周期 耗时: %.3f ms",
@@ -708,25 +1064,46 @@ private:
     enum class MeasurementMode
     {
         FULL,
+        UWB_FAKE_HEIGHT,
         UWB_XY_ONLY,
         TOF_Z_VZ_ONLY
     };
 
-    void measurementUpdate(const Eigen::MatrixXd &H,
-                        const Eigen::VectorXd &r,
-                        const Eigen::MatrixXd &Rm,
-                        MeasurementMode mode = MeasurementMode::FULL)
+    Vector9d measurementUpdate(const Eigen::MatrixXd &H,
+                               const Eigen::VectorXd &r,
+                               const Eigen::MatrixXd &Rm,
+                               MeasurementMode mode = MeasurementMode::FULL)
     {
-        if (H.rows() == 0)
-            return;
+        const Vector9d zero_dx = Vector9d::Zero();
+        if (H.rows() == 0 ||
+            H.cols() != 9 ||
+            r.size() != H.rows() ||
+            Rm.rows() != H.rows() ||
+            Rm.cols() != H.rows())
+        {
+            ROS_ERROR_THROTTLE(2.0, "ESKF测量更新维度不一致，跳过本批次");
+            return zero_dx;
+        }
 
         ros::WallTime t_update_start = ros::WallTime::now();
 
         const Matrix9d I9 = Matrix9d::Identity();
         const Eigen::MatrixXd S = H * P_ * H.transpose() + Rm;
 
+        Eigen::LDLT<Eigen::MatrixXd> ldlt(S);
+        if (ldlt.info() != Eigen::Success)
+        {
+            ROS_ERROR_THROTTLE(2.0, "ESKF创新协方差LDLT分解失败，跳过本批次");
+            return zero_dx;
+        }
+
         const Eigen::MatrixXd K_full =
-            (S.ldlt().solve(H * P_.transpose())).transpose();
+            (ldlt.solve(H * P_.transpose())).transpose();
+        if (!K_full.allFinite())
+        {
+            ROS_ERROR_THROTTLE(2.0, "ESKF卡尔曼增益出现NaN/Inf，跳过本批次");
+            return zero_dx;
+        }
 
         Eigen::MatrixXd K =
             Eigen::MatrixXd::Zero(9, H.rows());
@@ -734,6 +1111,16 @@ private:
         if (mode == MeasurementMode::FULL)
         {
             K = K_full;
+        }
+        else if (mode == MeasurementMode::UWB_FAKE_HEIGHT)
+        {
+            /*
+             * UWB仍可通过完整卡尔曼增益修正姿态、速度以及p_x、p_y，
+             * 但严格禁止向真实p_z注入修正。竖直方向残差由本批次
+             * delta_h_fake承担并在更新后丢弃。
+             */
+            K = K_full;
+            K.row(8).setZero();
         }
         else if (mode == MeasurementMode::UWB_XY_ONLY)
         {
@@ -752,14 +1139,17 @@ private:
 
         const Matrix9d IKH = I9 - K * H;
         P_ = IKH * P_ * IKH.transpose()
-        + K * Rm * K.transpose();
+             + K * Rm * K.transpose();
 
         injectError(dx);
+        resetErrorCovariance(dx.segment<3>(0));
         symmetrizeCovariance();
 
         ros::WallDuration update_elapsed = ros::WallTime::now() - t_update_start;
         ROS_INFO("[ESKF计时] 更新(measurementUpdate) 耗时: %.3f ms, 测量数=%d, 模式=%d",
                  update_elapsed.toSec() * 1e3, (int)H.rows(), (int)mode);
+
+        return dx;
     }
 
     void injectError(const Vector9d &dx)
@@ -772,6 +1162,24 @@ private:
         normalizeRotation();
         v_ += dv;
         p_ += dp;
+    }
+
+    void resetErrorCovariance(const Eigen::Vector3d &injected_dtheta)
+    {
+        /*
+         * 左乘误差：
+         *   R_true = Exp(delta_theta_old) R_hat_old
+         * 注入：
+         *   R_hat_new = Exp(injected_dtheta) R_hat_old
+         * 因而新旧零均值误差的一阶坐标变换是
+         *   delta_theta_new = J_l(injected_dtheta)
+         *                     (delta_theta_old - injected_dtheta).
+         * 必须同时变换姿态协方差及其与v、p的交叉协方差。
+         */
+        Matrix9d reset_jacobian = Matrix9d::Identity();
+        reset_jacobian.block<3, 3>(0, 0) =
+            leftJacobianSO3(injected_dtheta);
+        P_ = reset_jacobian * P_ * reset_jacobian.transpose();
     }
 
     void symmetrizeCovariance()
@@ -842,6 +1250,8 @@ private:
     bool init_from_pose_topic_;
     bool init_from_mocap_;
     bool tof_vertical_mode_;
+    bool use_uwb_fake_height_;
+    bool use_gravity_observation_;
 
     int imu_queue_size_;
     double imu_sync_slop_;
@@ -855,6 +1265,16 @@ private:
     double sigma_tof_;
     double uwb_residual_gate_;
     double tof_residual_gate_;
+    double uwb_fake_height_min_information_;
+
+    double gravity_magnitude_;
+    double gravity_accel_gate_A_;
+    double gravity_accel_gate_B_;
+    double sigma_acc_A_gravity_;
+    double sigma_acc_B_gravity_;
+    double sigma_gravity_model_;
+    double gravity_nis_gate_;
+    double gravity_update_rate_hz_;
 
     double init_p_x_;
     double init_p_y_;
@@ -878,6 +1298,8 @@ private:
     bool initialized_;
     bool has_last_imu_pair_time_;
     ros::Time last_imu_pair_time_;
+    bool has_last_gravity_attempt_time_ = false;
+    ros::Time last_gravity_attempt_time_;
 
     std::vector<int> tag_ids_;
     std::vector<int> anchor_ids_;

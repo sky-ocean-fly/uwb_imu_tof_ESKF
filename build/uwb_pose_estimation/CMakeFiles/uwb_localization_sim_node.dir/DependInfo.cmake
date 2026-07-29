@@ -26,11 +26,13 @@ set(CMAKE_CXX_TARGET_INCLUDE_PATH
   "/home/yu/catkin_workspace/devel/include"
   "/opt/ros/noetic/include"
   "/opt/ros/noetic/share/xmlrpcpp/cmake/../../../include/xmlrpcpp"
+  "/home/yu/catkin_workspace/src/imu_mahony/include"
   "/usr/include/eigen3"
   )
 
 # Targets to which this target links.
 set(CMAKE_TARGET_LINKED_INFO_FILES
+  "/home/yu/catkin_workspace/build/imu_mahony/CMakeFiles/imu_mahony_filter.dir/DependInfo.cmake"
   )
 
 # Fortran module output directory.

@@ -1,0 +1,32 @@
+schema_version: 1
+ros_topics_config: ros_topics.yaml
+
+target_valid_ranges: 200
+min_valid_ranges: 180
+settling_time_s: 1.5
+stability_window_s: 1.0
+max_position_std_m: 0.005
+max_rotation_std_deg: 0.5
+# Pilot 01 showed that 0.02 s rejects normal roughly 54 Hz mocap jitter
+# (observed p95 interval about 0.03 s). Pilot 02 starts from 0.04 s.
+max_sync_gap_s: 0.04
+# Initial continuity bound from the 2026-07-23 live check (about 52 Hz,
+# observed maximum header interval about 0.07 s). Reassess after the pilot.
+max_mocap_sample_gap_s: 0.10
+stream_timeout_s: 2.0
+status_publish_rate_hz: 2.0
+
+range_validation:
+  # The user-specified diagnostic envelope includes negative values, but a
+  # physical range remains invalid at <= 0 because reject_nonpositive is true.
+  min_m: -10.0
+  max_m: 10.0
+  reject_nonfinite: true
+  reject_nonpositive: true
+
+output:
+  raw_root: ../data/raw
+  refuse_existing_session: true
+  refuse_existing_pose: true
+  # 17 significant digits round-trip IEEE-754 timestamps and mocap values.
+  float_precision: 17

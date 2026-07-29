@@ -1,0 +1,8 @@
+# ROS Noetic provides rospy, rosbag, geometry_msgs and nlink_parser.
+numpy>=1.17
+PyYAML>=5.3
+matplotlib>=3.1
+
+# Required only for Gate 5 model training/export/inference.
+# Python 3.8 must use a PyTorch release that still supports Python 3.8.
+torch>=1.10

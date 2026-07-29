@@ -12,10 +12,8 @@ sigma_acc_density: 0.020    # m/s^2/sqrt(Hz)
 
 # Per-measurement discrete standard deviations.
 sigma_uwb: 0.033            # 随机噪声标准差，m
-uwb_bias: 0.10              # 固定正偏置，m
+uwb_bias: 0.3              # 固定正偏置，m
 sigma_tof: 0.020            # m
-sigma_rp_deg: 0.50          # deg, roll/pitch output for optimization node
-sigma_yaw_deg: 1.00         # deg
 
 # Common initial-pose perturbation applied to truth at t=0.
 init_dp_x: 0.25             # m
@@ -26,8 +24,7 @@ init_dpitch_deg: -4.0
 init_dyaw_deg: 8.0
 
 imu_a_topic: /imu_A/data_raw
-imu_b_topic: /imu_B/data_raw
-rpy_topic: /imu/rpy
+imu_b_topic: /imu_B/data_raw  # optimization node derives roll/pitch with its internal Mahony filter
 tof_topic: /ground_distance
 uwb_topic: /nlink_linktrack_nodeframe2
 world_a_topic: /sim/world_pose_A

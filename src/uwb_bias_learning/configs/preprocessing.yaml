@@ -1,0 +1,30 @@
+schema_version: 1
+min_valid_ranges: 180
+
+required_flags:
+  is_los: true
+  is_stable: true
+  is_sync_valid: true
+  is_range_valid: true
+  is_mocap_valid: true
+
+outlier_filter:
+  enabled: false
+  method: hampel_mad
+  threshold_mad: 3.5
+  minimum_scale_m: 0.001
+
+rotation_validity:
+  orthogonality_tolerance: 1.0e-6
+  determinant_tolerance: 1.0e-6
+
+near_duplicate_pose:
+  translation_tolerance_m: 0.01
+  rotation_tolerance_deg: 1.0
+
+splits:
+  seed: 2026
+  train_fraction: 0.70
+  val_fraction: 0.15
+  test_fraction: 0.15
+  prefer_session_split: true

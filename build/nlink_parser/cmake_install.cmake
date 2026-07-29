@@ -114,6 +114,14 @@ if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/nlink_parser" TYPE FILE FILES "/home/yu/catkin_workspace/src/nlink_parser/package.xml")
 endif()
 
+if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/nlink_parser" TYPE PROGRAM FILES "/home/yu/catkin_workspace/build/nlink_parser/catkin_generated/installspace/record_uwb_distance.py")
+endif()
+
+if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/nlink_parser" TYPE PROGRAM FILES "/home/yu/catkin_workspace/build/nlink_parser/catkin_generated/installspace/plot_uwb_distribution.py")
+endif()
+
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
   include("/home/yu/catkin_workspace/build/nlink_parser/extern/serial/cmake_install.cmake")

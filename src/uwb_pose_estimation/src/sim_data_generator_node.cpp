@@ -10,7 +10,6 @@
  *   /clock                         rosgraph_msgs/Clock
  *   /imu_A/data_raw                sensor_msgs/Imu, 100 Hz
  *   /imu_B/data_raw                sensor_msgs/Imu, 100 Hz
- *   /imu/rpy                       geometry_msgs/Vector3, 100 Hz, deg
  *   /ground_distance               geometry_msgs/PointStamped, 30 Hz
  *   /nlink_linktrack_nodeframe2    nlink_parser/LinktrackNodeframe2
  *                                   six sequential tag messages per 20 ms cycle
@@ -27,7 +26,6 @@
 #include <geometry_msgs/PointStamped.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
-#include <geometry_msgs/Vector3.h>
 #include <nlink_parser/LinktrackNodeframe2.h>
 #include <nlink_parser/LinktrackNode2.h>
 
@@ -98,29 +96,6 @@ Eigen::Matrix3d eulerZYX(double yaw, double pitch, double roll)
             Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY()) *
             Eigen::AngleAxisd(roll, Eigen::Vector3d::UnitX()))
         .toRotationMatrix();
-}
-
-Eigen::Vector3d rotationToEulerZYX(const Eigen::Matrix3d &R)
-{
-    // Return [yaw, pitch, roll] in radians. The designed trajectory stays far from pitch +/-90 deg.
-    const double sy = std::hypot(R(0, 0), R(1, 0));
-    const bool singular = sy < 1e-9;
-    double roll = 0.0;
-    double pitch = 0.0;
-    double yaw = 0.0;
-    if (!singular)
-    {
-        roll = std::atan2(R(2, 1), R(2, 2));
-        pitch = std::atan2(-R(2, 0), sy);
-        yaw = std::atan2(R(1, 0), R(0, 0));
-    }
-    else
-    {
-        roll = std::atan2(-R(1, 2), R(1, 1));
-        pitch = std::atan2(-R(2, 0), sy);
-        yaw = 0.0;
-    }
-    return Eigen::Vector3d(yaw, pitch, roll);
 }
 
 // 运动学
@@ -275,7 +250,6 @@ public:
         clock_pub_ = nh_.advertise<rosgraph_msgs::Clock>("/clock", 10);
         imu_a_pub_ = nh_.advertise<sensor_msgs::Imu>(imu_a_topic_, 50);
         imu_b_pub_ = nh_.advertise<sensor_msgs::Imu>(imu_b_topic_, 50);
-        rpy_pub_ = nh_.advertise<geometry_msgs::Vector3>(rpy_topic_, 50);
         tof_pub_ = nh_.advertise<geometry_msgs::PointStamped>(tof_topic_, 20);
         uwb_pub_ = nh_.advertise<nlink_parser::LinktrackNodeframe2>(uwb_topic_, 100);
         world_a_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(world_a_topic_, 10);
@@ -290,7 +264,7 @@ public:
                                           this);
 
         ROS_INFO("Simulation generator ready: duration=%.1f s, seed=%u", duration_sec_, random_seed_);
-        ROS_INFO("Rates: IMU/RPY=100 Hz, truth=50 Hz, ToF=30 Hz, each UWB tag=50 Hz, total UWB=300 Hz");
+        ROS_INFO("Rates: IMU=100 Hz, truth=50 Hz, ToF=30 Hz, each UWB tag=50 Hz, total UWB=300 Hz");
         ROS_INFO("Geometry: 6 anchors (IDs 0-5), 6 tags (IDs 6-11)");
     }
 
@@ -308,10 +282,9 @@ private:
         pnh_.param<double>("sigma_gyro_density", sigma_gyro_density_, 0.002);
         pnh_.param<double>("sigma_acc_density", sigma_acc_density_, 0.020);
         pnh_.param<double>("sigma_uwb", sigma_uwb_, 0.033);
-        pnh_.param<double>("uwb_bias", uwb_bias_, 0.0);
+        pnh_.param<double>("uwb_bias_min", uwb_bias_min_, 0.1);
+        pnh_.param<double>("uwb_bias_max", uwb_bias_max_, 0.3);
         pnh_.param<double>("sigma_tof", sigma_tof_, 0.020);
-        pnh_.param<double>("sigma_rp_deg", sigma_rp_deg_, 0.50);
-        pnh_.param<double>("sigma_yaw_deg", sigma_yaw_deg_, 1.00);
 
         double init_dp_x = 0.25;
         double init_dp_y = -0.20;
@@ -332,7 +305,6 @@ private:
 
         pnh_.param<std::string>("imu_a_topic", imu_a_topic_, "/imu_A/data_raw");
         pnh_.param<std::string>("imu_b_topic", imu_b_topic_, "/imu_B/data_raw");
-        pnh_.param<std::string>("rpy_topic", rpy_topic_, "/imu/rpy");
         pnh_.param<std::string>("tof_topic", tof_topic_, "/ground_distance");
         pnh_.param<std::string>("uwb_topic", uwb_topic_, "/nlink_linktrack_nodeframe2");
         pnh_.param<std::string>("world_a_topic", world_a_topic_, "/sim/world_pose_A");
@@ -340,6 +312,15 @@ private:
         pnh_.param<std::string>("relative_truth_topic", relative_truth_topic_, "/sim/relative_truth_pose");
         pnh_.param<std::string>("relative_twist_topic", relative_twist_topic_, "/sim/relative_truth_twist");
         pnh_.param<std::string>("initial_pose_topic", initial_pose_topic_, "/sim/initial_pose");
+    }
+
+    //生成 [uwb_bias_min_, uwb_bias_max_] 范围内的均匀分布偏置
+    double uniformBias()
+    {
+        if (!(uwb_bias_max_ > uwb_bias_min_))
+            return uwb_bias_min_;
+        std::uniform_real_distribution<double> dist(uwb_bias_min_, uwb_bias_max_);
+        return dist(rng_);
     }
 
     //生成高斯噪声
@@ -453,18 +434,6 @@ private:
         msg.linear_acceleration.z = specific_force.z();
     }
 
-    //发布100Hz的/imu/rpy
-    void publishRpy(const TruthState &truth)
-    {
-        // The framework requests ^W R_B. A has yaw only, so world and relative roll/pitch are identical.
-        const Eigen::Vector3d ypr = rotationToEulerZYX(truth.B.R);
-        geometry_msgs::Vector3 msg;
-        msg.x = ypr.z() * kRadToDeg + gaussian(sigma_rp_deg_);  // roll
-        msg.y = ypr.y() * kRadToDeg + gaussian(sigma_rp_deg_);  // pitch
-        msg.z = ypr.x() * kRadToDeg + gaussian(sigma_yaw_deg_); // yaw
-        rpy_pub_.publish(msg);
-    }
-
     //发布30Hz的tof测距数据到/ground_distance
     void publishTof(const ros::Time &stamp, const TruthState &truth)
     {
@@ -526,7 +495,8 @@ private:
             node.role = 0;
             node.id = static_cast<std::uint8_t>(anchor_ids[i]);
             const double true_distance = (tag_A - anchor_positions[i]).norm();
-            const double uwb_bias_change = 0.1;//uwb_bias_ + 0.1 * std::sin(0.6*t);
+            double uwb_bias_change = uniformBias();//测试使用
+            uwb_bias_change = 0.3;
             node.dis = static_cast<float>(true_distance + uwb_bias_change + gaussian(sigma_uwb_));
             node.fp_rssi = -80.0F;
             node.rx_rssi = -77.0F;
@@ -575,10 +545,7 @@ private:
         if (tick_ % kTruthTicks == 0)
             publishTruth(t, stamp, truth);
         if (tick_ % kImuTicks == 0)
-        {
             publishImu(t, stamp, truth);
-            publishRpy(truth);
-        }
         if (tick_ % kTofTicks == 0)
             publishTof(stamp, truth);
 
@@ -595,7 +562,6 @@ private:
     ros::Publisher clock_pub_;
     ros::Publisher imu_a_pub_;
     ros::Publisher imu_b_pub_;
-    ros::Publisher rpy_pub_;
     ros::Publisher tof_pub_;
     ros::Publisher uwb_pub_;
     ros::Publisher world_a_pub_;
@@ -620,16 +586,14 @@ private:
     double sigma_gyro_density_ = 0.002;
     double sigma_acc_density_ = 0.020;
     double sigma_uwb_ = 0.033;
-    double uwb_bias_ = 0.0;
+    double uwb_bias_min_ = 0.1;
+    double uwb_bias_max_ = 0.3;
     double sigma_tof_ = 0.020;
-    double sigma_rp_deg_ = 0.50;
-    double sigma_yaw_deg_ = 1.00;
     Eigen::Vector3d init_dp_ = Eigen::Vector3d(0.25, -0.20, 0.15);
     Eigen::Vector3d init_dtheta_ = Eigen::Vector3d::Zero();
 
     std::string imu_a_topic_;
     std::string imu_b_topic_;
-    std::string rpy_topic_;
     std::string tof_topic_;
     std::string uwb_topic_;
     std::string world_a_topic_;

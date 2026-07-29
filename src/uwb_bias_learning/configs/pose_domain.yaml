@@ -1,0 +1,27 @@
+schema_version: 1
+distance_m:
+  min: 0.1
+  max: 2.0
+azimuth_deg:
+  min: -60.0
+  max: 60.0
+elevation_deg:
+  min: -20.0
+  max: 20.0
+relative_roll_deg:
+  min: -30.0
+  max: 30.0
+relative_pitch_deg:
+  min: -40.0
+  max: 40.0
+relative_yaw_deg:
+  min: -90.0
+  max: 90.0
+
+planner:
+  method: latin_hypercube
+  seed: 2026
+  interior_count: 40
+  include_center: true
+  include_axis_boundaries: true
+  duplicate_pose_count: 5
