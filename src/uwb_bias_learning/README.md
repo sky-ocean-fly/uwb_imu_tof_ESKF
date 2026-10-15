@@ -16,6 +16,51 @@
 - 原始文件和运行目录只创建、不覆盖；重复命令应使用新的 session、attempt 或输出路径。
 - `data_origin` 和 `is_synthetic` 必须由 session 元数据显式声明：物理实验只能是 `physical_experiment`/`false`，合成软件测试只能是 `synthetic_test`/`true`；不能因数据来自 ROS 或 bag 就推断为真实实验。
 
+### 用刚体杆臂直接查看实物测距偏置
+
+当动捕刚体原点不在标签/基站天线中心时，可对已经时间同步的逐帧 CSV 直接计算：
+
+```bash
+python3 scripts/estimate_range_bias_from_mocap.py \
+  --input <SYNCED_RELATIVE_POSE_AND_UWB.csv> \
+  --output outputs/reports/uwb_bias_<UNIQUE_TAG>.csv \
+  --tag-position-body <TAG_X_M> <TAG_Y_M> <TAG_Z_M> \
+  --anchor-position-base <ANCHOR_X_M> <ANCHOR_Y_M> <ANCHOR_Z_M> \
+  --pose-direction base_to_body
+```
+
+默认输入列为 `range_m`、`rel_tx rel_ty rel_tz` 和
+`rel_qx rel_qy rel_qz rel_qw`（四元数顺序 `qx qy qz qw`）。若 CSV 提供旋转矩阵，可加
+`--rotation-columns rel_R00 rel_R01 rel_R02 rel_R10 rel_R11 rel_R12 rel_R20 rel_R21 rel_R22`。
+输出逐帧真实距离与 `uwb_bias_m = range_m - true_distance_m`，并生成
+`<output>.summary.json`。若输入存在 `is_valid` 列，默认只统计有效行。详细公式见
+[坐标约定](docs/coordinate_convention.md)。
+
+对于 `uwb_imu_tof_eskf_real_node.cpp` 使用的 4 个标签（5--8）、6 个基站
+（0、1、2、3、4、9）和单路 `/vrpn_client/UWB_rocket/pose`，可直接从 bag 重建全部
+24 条链路：
+
+```bash
+python3 scripts/analyze_multitag_uwb_bias_bag.py \
+  --bag <INPUT.bag> \
+  --output-csv <BIAS_SAMPLES.csv> \
+  --summary-json <BIAS_SUMMARY.json>
+```
+
+该脚本使用 UWB 的 bag 接收时间插值动捕位姿，并复现节点中的
+`rho_ij = norm(p_A_B + R_A_B b_j - a_i)`；默认同步门限为 0.04 s，动捕插值区间上限为
+0.10 s。几何常量与节点 `loadGeometry()` 保持一致，节点标定量改变时必须同步更新脚本。
+
+逐测距 CSV 可进一步绘制 24 条链路随时间变化的总览图和细节图：
+
+```bash
+python3 scripts/plot_multitag_uwb_bias_time.py \
+  --input <BIAS_SAMPLES.csv> \
+  --overview-output <BIAS_TIME_OVERVIEW.png> \
+  --detail-output <BIAS_TIME_DETAIL.png> \
+  --smooth-window-s 1.0
+```
+
 ## Gate 顺序与当前阻塞
 
 | Gate | 当前状态 | 进入下一 Gate 前的条件 |

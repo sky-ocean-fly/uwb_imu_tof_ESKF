@@ -1,5 +1,6 @@
 #include <ros/ros.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
@@ -34,6 +35,7 @@ public:
           reported_(false)
     {
         pnh_.param<std::string>("est_topic", est_topic_, "/estimated_pose");
+        pnh_.param<std::string>("est_cov_topic", est_cov_topic_, "");
         pnh_.param<std::string>("gt_topic", gt_topic_, "/mocap_truth_pose");
         pnh_.param<std::string>("csv_path", csv_path_, "/home/yu/catkin_workspace/dynamic_pose_compare1.csv");
 
@@ -71,32 +73,38 @@ public:
 
         file_ << std::fixed << std::setprecision(9);
 
-        file_ << "time,"
-              << "stamp_est,stamp_gt,"
-              << "est_x,est_y,est_z,"
-              << "gt_x,gt_y,gt_z,"
-              << "err_x,err_y,err_z,err_pos_norm,"
-              << "est_roll,est_pitch,est_yaw,"
-              << "gt_roll,gt_pitch,gt_yaw,"
-              << "err_roll,err_pitch,err_yaw,"
-              << "err_rot_deg"
-              << "\n";
+        writeCsvHeader();
 
-        est_sub_.subscribe(nh_, est_topic_, queue_size_);
         gt_sub_.subscribe(nh_, gt_topic_, queue_size_);
 
-        sync_.reset(new message_filters::Synchronizer<SyncPolicy>(
-            SyncPolicy(queue_size_),
-            est_sub_,
-            gt_sub_));
-
-        sync_->setMaxIntervalDuration(ros::Duration(sync_slop_));
-
-        sync_->registerCallback(
-            boost::bind(&PoseCompareLogger::callback, this, _1, _2));
+        if (est_cov_topic_.empty())
+        {
+            est_sub_.subscribe(nh_, est_topic_, queue_size_);
+            legacy_sync_.reset(new message_filters::Synchronizer<LegacySyncPolicy>(
+                LegacySyncPolicy(queue_size_), est_sub_, gt_sub_));
+            legacy_sync_->setMaxIntervalDuration(ros::Duration(sync_slop_));
+            legacy_sync_->registerCallback(
+                boost::bind(&PoseCompareLogger::legacyCallback, this, _1, _2));
+        }
+        else
+        {
+            est_cov_sub_.subscribe(nh_, est_cov_topic_, queue_size_);
+            covariance_sync_.reset(new message_filters::Synchronizer<CovarianceSyncPolicy>(
+                CovarianceSyncPolicy(queue_size_), est_cov_sub_, gt_sub_));
+            covariance_sync_->setMaxIntervalDuration(ros::Duration(sync_slop_));
+            covariance_sync_->registerCallback(
+                boost::bind(&PoseCompareLogger::covarianceCallback, this, _1, _2));
+        }
 
         ROS_INFO("PoseCompareLogger启动");
-        ROS_INFO("  算法估计话题: %s", est_topic_.c_str());
+        if (est_cov_topic_.empty())
+        {
+            ROS_INFO("  算法估计话题: %s", est_topic_.c_str());
+        }
+        else
+        {
+            ROS_INFO("  算法估计及协方差话题: %s", est_cov_topic_.c_str());
+        }
         ROS_INFO("  动捕真值话题: %s", gt_topic_.c_str());
         ROS_INFO("  CSV保存路径: %s", csv_path_.c_str());
         ROS_INFO("  同步时间容差: %.3f s", sync_slop_);
@@ -120,10 +128,17 @@ public:
     }
 
 private:
-    using SyncPolicy =
+    using LegacySyncPolicy =
         message_filters::sync_policies::ApproximateTime<
             geometry_msgs::PoseStamped,
             geometry_msgs::PoseStamped>;
+
+    using CovarianceSyncPolicy =
+        message_filters::sync_policies::ApproximateTime<
+            geometry_msgs::PoseWithCovarianceStamped,
+            geometry_msgs::PoseStamped>;
+
+    using PoseCovariance = geometry_msgs::PoseWithCovariance::_covariance_type;
 
     static double rad2deg(double rad)
     {
@@ -150,21 +165,21 @@ private:
         return angle;
     }
 
-    static Eigen::Vector3d getPosition(const geometry_msgs::PoseStamped::ConstPtr &msg)
+    static Eigen::Vector3d getPosition(const geometry_msgs::Pose &pose)
     {
         return Eigen::Vector3d(
-            msg->pose.position.x,
-            msg->pose.position.y,
-            msg->pose.position.z);
+            pose.position.x,
+            pose.position.y,
+            pose.position.z);
     }
 
-    static Eigen::Quaterniond getQuaternion(const geometry_msgs::PoseStamped::ConstPtr &msg)
+    static Eigen::Quaterniond getQuaternion(const geometry_msgs::Pose &pose)
     {
         Eigen::Quaterniond q(
-            msg->pose.orientation.w,
-            msg->pose.orientation.x,
-            msg->pose.orientation.y,
-            msg->pose.orientation.z);
+            pose.orientation.w,
+            pose.orientation.x,
+            pose.orientation.y,
+            pose.orientation.z);
 
         q.normalize();
         return q;
@@ -204,6 +219,83 @@ private:
         double angle = std::acos(cos_angle);
 
         return rad2deg(angle);
+    }
+
+    static Eigen::Vector3d logSO3(const Eigen::Matrix3d &R)
+    {
+        Eigen::AngleAxisd angle_axis(R);
+        if (!std::isfinite(angle_axis.angle()) ||
+            !angle_axis.axis().allFinite() ||
+            std::fabs(angle_axis.angle()) < 1e-12)
+        {
+            return Eigen::Vector3d::Zero();
+        }
+        return angle_axis.angle() * angle_axis.axis();
+    }
+
+    void writeCsvHeader()
+    {
+        file_ << "time,"
+              << "stamp_est,stamp_gt,"
+              << "est_x,est_y,est_z,"
+              << "gt_x,gt_y,gt_z,"
+              << "err_x,err_y,err_z,err_pos_norm,"
+              << "est_roll,est_pitch,est_yaw,"
+              << "gt_roll,gt_pitch,gt_yaw,"
+              << "err_roll,err_pitch,err_yaw,"
+              << "err_rot_deg";
+
+        if (!est_cov_topic_.empty())
+        {
+            file_ << ",consistency_err_x,consistency_err_y,consistency_err_z"
+                  << ",err_theta_x_deg,err_theta_y_deg,err_theta_z_deg"
+                  << ",pos_3sigma_upper_x_m,pos_3sigma_upper_y_m,pos_3sigma_upper_z_m"
+                  << ",pos_3sigma_lower_x_m,pos_3sigma_lower_y_m,pos_3sigma_lower_z_m"
+                  << ",theta_3sigma_upper_x_deg,theta_3sigma_upper_y_deg,theta_3sigma_upper_z_deg"
+                  << ",theta_3sigma_lower_x_deg,theta_3sigma_lower_y_deg,theta_3sigma_lower_z_deg";
+        }
+
+        file_ << "\n";
+    }
+
+    static bool computeThreeSigma(const PoseCovariance &covariance,
+                                  Eigen::Vector3d &position_3sigma,
+                                  Eigen::Vector3d &attitude_3sigma_deg)
+    {
+        for (const double value : covariance)
+        {
+            if (!std::isfinite(value))
+            {
+                ROS_ERROR_THROTTLE(2.0, "收到的位姿协方差含NaN/Inf，跳过该样本");
+                return false;
+            }
+        }
+
+        constexpr double kNegativeVarianceTolerance = 1e-12;
+        for (int i = 0; i < 6; ++i)
+        {
+            double variance = covariance[i * 6 + i];
+            if (variance < -kNegativeVarianceTolerance)
+            {
+                ROS_ERROR_THROTTLE(
+                    2.0,
+                    "收到的位姿协方差第%d个自由度方差为负值 %.6e，跳过该样本",
+                    i, variance);
+                return false;
+            }
+
+            variance = std::max(0.0, variance);
+            const double bound = 3.0 * std::sqrt(variance);
+            if (i < 3)
+            {
+                position_3sigma(i) = bound;
+            }
+            else
+            {
+                attitude_3sigma_deg(i - 3) = rad2deg(bound);
+            }
+        }
+        return true;
     }
 
     // 从文件路径中提取目录路径
@@ -250,18 +342,35 @@ private:
         return true;
     }
 
-    void callback(const geometry_msgs::PoseStamped::ConstPtr &est_msg,
-                  const geometry_msgs::PoseStamped::ConstPtr &gt_msg)
+    void legacyCallback(const geometry_msgs::PoseStamped::ConstPtr &est_msg,
+                        const geometry_msgs::PoseStamped::ConstPtr &gt_msg)
+    {
+        processSample(est_msg->header.stamp.toSec(), est_msg->pose, gt_msg, nullptr);
+    }
+
+    void covarianceCallback(
+        const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &est_msg,
+        const geometry_msgs::PoseStamped::ConstPtr &gt_msg)
+    {
+        processSample(est_msg->header.stamp.toSec(),
+                      est_msg->pose.pose,
+                      gt_msg,
+                      &est_msg->pose.covariance);
+    }
+
+    void processSample(double stamp_est,
+                       const geometry_msgs::Pose &est_pose,
+                       const geometry_msgs::PoseStamped::ConstPtr &gt_msg,
+                       const PoseCovariance *covariance)
     {
         if (!file_.is_open())
         {
             return;
         }
 
-        double stamp_est = est_msg->header.stamp.toSec();
-        double stamp_gt = gt_msg->header.stamp.toSec();
+        const double stamp_gt = gt_msg->header.stamp.toSec();
 
-        double stamp = 0.5 * (stamp_est + stamp_gt);
+        const double stamp = 0.5 * (stamp_est + stamp_gt);
 
         if (reported_)
         {
@@ -276,33 +385,45 @@ private:
             has_t0_ = true;
         }
 
-        double time = stamp - t0_;
+        const double time = stamp - t0_;
         if (time < 0.0)
         {
             return;
         }
 
-        Eigen::Vector3d t_est = getPosition(est_msg);
-        Eigen::Vector3d t_gt = getPosition(gt_msg);
+        Eigen::Vector3d position_3sigma = Eigen::Vector3d::Zero();
+        Eigen::Vector3d attitude_3sigma_deg = Eigen::Vector3d::Zero();
+        if (covariance != nullptr &&
+            !computeThreeSigma(*covariance, position_3sigma, attitude_3sigma_deg))
+        {
+            return;
+        }
 
-        Eigen::Quaterniond q_est = getQuaternion(est_msg);
-        Eigen::Quaterniond q_gt = getQuaternion(gt_msg);
+        const Eigen::Vector3d t_est = getPosition(est_pose);
+        const Eigen::Vector3d t_gt = getPosition(gt_msg->pose);
 
-        Eigen::Matrix3d R_est = q_est.toRotationMatrix();
-        Eigen::Matrix3d R_gt = q_gt.toRotationMatrix();
+        const Eigen::Quaterniond q_est = getQuaternion(est_pose);
+        const Eigen::Quaterniond q_gt = getQuaternion(gt_msg->pose);
 
-        Eigen::Vector3d rpy_est = quaternionToRPY(q_est);
-        Eigen::Vector3d rpy_gt = quaternionToRPY(q_gt);
+        const Eigen::Matrix3d R_est = q_est.toRotationMatrix();
+        const Eigen::Matrix3d R_gt = q_gt.toRotationMatrix();
 
-        Eigen::Vector3d pos_err = t_est - t_gt;
-        double err_pos_norm = pos_err.norm();
+        const Eigen::Vector3d rpy_est = quaternionToRPY(q_est);
+        const Eigen::Vector3d rpy_gt = quaternionToRPY(q_gt);
+
+        const Eigen::Vector3d pos_err = t_est - t_gt;
+        const Eigen::Vector3d consistency_pos_err = t_gt - t_est;
+        const double err_pos_norm = pos_err.norm();
 
         Eigen::Vector3d rpy_err;
         rpy_err.x() = wrapToPi(rpy_est.x() - rpy_gt.x());
         rpy_err.y() = wrapToPi(rpy_est.y() - rpy_gt.y());
         rpy_err.z() = wrapToPi(rpy_est.z() - rpy_gt.z());
 
-        double err_rot_deg = rotationErrorDeg(R_est, R_gt);
+        const double err_rot_deg = rotationErrorDeg(R_est, R_gt);
+        const Eigen::Vector3d theta_err_deg =
+            logSO3(R_gt * R_est.transpose()).unaryExpr(
+                [](double value) { return rad2deg(value); });
 
         ++sample_count_;
         sum_sq_pos_ += static_cast<long double>(err_pos_norm) * err_pos_norm;
@@ -331,8 +452,31 @@ private:
               << rad2deg(rpy_err.y()) << ","
               << rad2deg(rpy_err.z()) << ","
 
-              << err_rot_deg
-              << "\n";
+              << err_rot_deg;
+
+        if (covariance != nullptr)
+        {
+            file_ << "," << consistency_pos_err.x()
+                  << "," << consistency_pos_err.y()
+                  << "," << consistency_pos_err.z()
+                  << "," << theta_err_deg.x()
+                  << "," << theta_err_deg.y()
+                  << "," << theta_err_deg.z()
+                  << "," << position_3sigma.x()
+                  << "," << position_3sigma.y()
+                  << "," << position_3sigma.z()
+                  << "," << -position_3sigma.x()
+                  << "," << -position_3sigma.y()
+                  << "," << -position_3sigma.z()
+                  << "," << attitude_3sigma_deg.x()
+                  << "," << attitude_3sigma_deg.y()
+                  << "," << attitude_3sigma_deg.z()
+                  << "," << -attitude_3sigma_deg.x()
+                  << "," << -attitude_3sigma_deg.y()
+                  << "," << -attitude_3sigma_deg.z();
+        }
+
+        file_ << "\n";
 
         file_.flush();
 
@@ -375,6 +519,7 @@ private:
     ros::NodeHandle pnh_;
 
     std::string est_topic_;
+    std::string est_cov_topic_;
     std::string gt_topic_;
     std::string csv_path_;
     std::string method_name_;
@@ -385,9 +530,11 @@ private:
     double simulation_start_stamp_sec_;
 
     message_filters::Subscriber<geometry_msgs::PoseStamped> est_sub_;
+    message_filters::Subscriber<geometry_msgs::PoseWithCovarianceStamped> est_cov_sub_;
     message_filters::Subscriber<geometry_msgs::PoseStamped> gt_sub_;
 
-    boost::shared_ptr<message_filters::Synchronizer<SyncPolicy>> sync_;
+    boost::shared_ptr<message_filters::Synchronizer<LegacySyncPolicy>> legacy_sync_;
+    boost::shared_ptr<message_filters::Synchronizer<CovarianceSyncPolicy>> covariance_sync_;
 
     std::ofstream file_;
 

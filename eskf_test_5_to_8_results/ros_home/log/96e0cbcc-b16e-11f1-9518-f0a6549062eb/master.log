@@ -1,0 +1,369 @@
+[rosmaster.main][INFO] 2026-09-16 01:33:16,423: initialization complete, waiting for shutdown
+[rosmaster.main][INFO] 2026-09-16 01:33:16,423: Starting ROS Master Node
+[xmlrpc][INFO] 2026-09-16 01:33:16,424: XML-RPC server binding to 127.0.0.1:11362
+[xmlrpc][INFO] 2026-09-16 01:33:16,424: Started XML-RPC server [http://localhost:11362/]
+[rosmaster.master][INFO] 2026-09-16 01:33:16,424: Master initialized: port[11362], uri[http://localhost:11362/]
+[xmlrpc][INFO] 2026-09-16 01:33:16,424: xml rpc node: starting XML-RPC server
+[rosmaster.master][INFO] 2026-09-16 01:33:16,469: +PARAM [/run_id] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,470: +PARAM [/roslaunch/uris/host_localhost__41305] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,496: +PARAM [/rosversion] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,496: +PARAM [/rosdistro] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,500: +SERVICE [/rosout/get_loggers] /rosout http://localhost:35921/
+[rosmaster.master][INFO] 2026-09-16 01:33:16,500: +SERVICE [/rosout/set_logger_level] /rosout http://localhost:35921/
+[rosmaster.master][INFO] 2026-09-16 01:33:16,500: +PUB [/rosout_agg] /rosout http://localhost:35921/
+[rosmaster.master][INFO] 2026-09-16 01:33:16,501: +SUB [/rosout] /rosout http://localhost:35921/
+[rosmaster.master][INFO] 2026-09-16 01:33:16,602: +PARAM [/use_sim_time] by /rosparam-9093
+[rosmaster.master][INFO] 2026-09-16 01:33:16,939: +PARAM [/roslaunch/uris/host_localhost__40671] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,941: +PARAM [/rosversion] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,941: +PARAM [/rosdistro] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,941: +PARAM [/imu_mahony_node/imu_topic] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,941: +PARAM [/imu_mahony_node/rpy_topic] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,941: +PARAM [/imu_mahony_node/kp] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,941: +PARAM [/imu_mahony_node/ki] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,941: +PARAM [/ground_distance_node/tof_topic] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,941: +PARAM [/ground_distance_node/rpy_topic] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,941: +PARAM [/ground_distance_node/ground_topic] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,941: +PARAM [/ground_distance_node/middle_pixel_index] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,941: +PARAM [/roslaunch/uris/host_localhost__42833] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,944: +PARAM [/rosversion] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,944: +PARAM [/rosdistro] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,944: +PARAM [/fake_imu_a_node/topic] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,944: +PARAM [/fake_imu_a_node/frame_id] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,944: +PARAM [/fake_imu_a_node/rate_hz] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,944: +PARAM [/fake_imu_a_node/angular_velocity_x] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,944: +PARAM [/fake_imu_a_node/angular_velocity_y] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,944: +PARAM [/fake_imu_a_node/angular_velocity_z] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,944: +PARAM [/fake_imu_a_node/linear_acceleration_x] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,944: +PARAM [/fake_imu_a_node/linear_acceleration_y] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,944: +PARAM [/fake_imu_a_node/linear_acceleration_z] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,945: +PARAM [/uwb_imu_tof_eskf_real_node/uwb_topic] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,945: +PARAM [/uwb_imu_tof_eskf_real_node/tof_topic] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,945: +PARAM [/uwb_imu_tof_eskf_real_node/imu_a_topic] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,945: +PARAM [/uwb_imu_tof_eskf_real_node/imu_b_topic] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,945: +PARAM [/uwb_imu_tof_eskf_real_node/mocap_topic] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,945: +PARAM [/uwb_imu_tof_eskf_real_node/eskf_pose_topic] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,945: +PARAM [/uwb_imu_tof_eskf_real_node/eskf_pose_cov_topic] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,945: +PARAM [/uwb_imu_tof_eskf_real_node/mocap_truth_topic] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,945: +PARAM [/uwb_imu_tof_eskf_real_node/frame_id] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,945: +PARAM [/uwb_imu_tof_eskf_real_node/init_from_pose_topic] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,945: +PARAM [/uwb_imu_tof_eskf_real_node/init_pose_topic] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,945: +PARAM [/uwb_imu_tof_eskf_real_node/init_from_mocap] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,945: +PARAM [/uwb_imu_tof_eskf_real_node/tof_vertical_mode] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,945: +PARAM [/uwb_imu_tof_eskf_real_node/imu_queue_size] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,945: +PARAM [/uwb_imu_tof_eskf_real_node/imu_sync_slop] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,945: +PARAM [/uwb_imu_tof_eskf_real_node/max_imu_dt] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,945: +PARAM [/uwb_imu_tof_eskf_real_node/sigma_gyro_A] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,945: +PARAM [/uwb_imu_tof_eskf_real_node/sigma_gyro_B] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,945: +PARAM [/uwb_imu_tof_eskf_real_node/sigma_acc_A] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,945: +PARAM [/uwb_imu_tof_eskf_real_node/sigma_acc_B] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,945: +PARAM [/uwb_imu_tof_eskf_real_node/sigma_uwb] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,945: +PARAM [/uwb_imu_tof_eskf_real_node/sigma_tof] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,945: +PARAM [/uwb_imu_tof_eskf_real_node/uwb_residual_gate] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,945: +PARAM [/uwb_imu_tof_eskf_real_node/tof_residual_gate] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,945: +PARAM [/uwb_imu_tof_eskf_real_node/init_p_x] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,945: +PARAM [/uwb_imu_tof_eskf_real_node/init_p_y] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,945: +PARAM [/uwb_imu_tof_eskf_real_node/init_p_z] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,945: +PARAM [/uwb_imu_tof_eskf_real_node/init_yaw_deg] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,945: +PARAM [/uwb_imu_tof_eskf_real_node/init_pitch_deg] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,946: +PARAM [/uwb_imu_tof_eskf_real_node/init_roll_deg] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,946: +PARAM [/uwb_imu_tof_eskf_real_node/init_sigma_angle] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,946: +PARAM [/uwb_imu_tof_eskf_real_node/init_sigma_velocity] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,946: +PARAM [/uwb_imu_tof_eskf_real_node/init_sigma_position] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,946: +PARAM [/uwb_imu_tof_eskf_real_node/publish_rate_hz] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,946: +PARAM [/uwb_imu_tof_eskf_real_node/estimate_imu_bias] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,946: +PARAM [/pose_compare_logger_eskf/est_topic] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,946: +PARAM [/pose_compare_logger_eskf/est_cov_topic] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,946: +PARAM [/pose_compare_logger_eskf/gt_topic] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,946: +PARAM [/pose_compare_logger_eskf/csv_path] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,946: +PARAM [/pose_compare_logger_eskf/queue_size] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,946: +PARAM [/pose_compare_logger_eskf/sync_slop] by /roslaunch
+[rosmaster.master][INFO] 2026-09-16 01:33:16,995: +PUB [/rosout] /imu_mahony_node http://localhost:36677/
+[rosmaster.master][INFO] 2026-09-16 01:33:16,995: +SERVICE [/imu_mahony_node/get_loggers] /imu_mahony_node http://localhost:36677/
+[rosmaster.master][INFO] 2026-09-16 01:33:16,995: +SERVICE [/imu_mahony_node/set_logger_level] /imu_mahony_node http://localhost:36677/
+[rosmaster.master][INFO] 2026-09-16 01:33:16,997: +SUB [/clock] /imu_mahony_node http://localhost:36677/
+[rosmaster.master][INFO] 2026-09-16 01:33:17,000: +PUB [/rosout] /fake_imu_a_node http://localhost:34199/
+[rosmaster.master][INFO] 2026-09-16 01:33:17,000: +SUB [/mynteye/imu/data_raw] /imu_mahony_node http://localhost:36677/
+[rosmaster.master][INFO] 2026-09-16 01:33:17,001: +SERVICE [/fake_imu_a_node/get_loggers] /fake_imu_a_node http://localhost:34199/
+[rosmaster.master][INFO] 2026-09-16 01:33:17,001: +PUB [/rosout] /ground_distance_node http://localhost:39799/
+[rosmaster.master][INFO] 2026-09-16 01:33:17,001: +PUB [/imu/rpy] /imu_mahony_node http://localhost:36677/
+[rosmaster.master][INFO] 2026-09-16 01:33:17,001: +SERVICE [/fake_imu_a_node/set_logger_level] /fake_imu_a_node http://localhost:34199/
+[rosmaster.master][INFO] 2026-09-16 01:33:17,001: +SERVICE [/ground_distance_node/get_loggers] /ground_distance_node http://localhost:39799/
+[rosmaster.master][INFO] 2026-09-16 01:33:17,002: +CACHEDPARAM [/rosout_disable_topics_generation] by /imu_mahony_node
+[rosmaster.master][INFO] 2026-09-16 01:33:17,002: +SERVICE [/ground_distance_node/set_logger_level] /ground_distance_node http://localhost:39799/
+[rosmaster.master][INFO] 2026-09-16 01:33:17,004: +SUB [/clock] /fake_imu_a_node http://localhost:34199/
+[rosmaster.master][INFO] 2026-09-16 01:33:17,005: +SUB [/clock] /ground_distance_node http://localhost:39799/
+[rosmaster.master][INFO] 2026-09-16 01:33:17,008: +PUB [/rosout] /uwb_imu_tof_eskf_real_node http://localhost:35865/
+[rosmaster.master][INFO] 2026-09-16 01:33:17,010: +SERVICE [/uwb_imu_tof_eskf_real_node/get_loggers] /uwb_imu_tof_eskf_real_node http://localhost:35865/
+[rosmaster.master][INFO] 2026-09-16 01:33:17,010: +PUB [/imu_A/data_raw] /fake_imu_a_node http://localhost:34199/
+[rosmaster.master][INFO] 2026-09-16 01:33:17,011: +SUB [/nlink_tofsensem_frame0] /ground_distance_node http://localhost:39799/
+[rosmaster.master][INFO] 2026-09-16 01:33:17,011: +SERVICE [/uwb_imu_tof_eskf_real_node/set_logger_level] /uwb_imu_tof_eskf_real_node http://localhost:35865/
+[rosmaster.master][INFO] 2026-09-16 01:33:17,011: +CACHEDPARAM [/rosout_disable_topics_generation] by /fake_imu_a_node
+[rosmaster.master][INFO] 2026-09-16 01:33:17,013: +PUB [/rosout] /pose_compare_logger_eskf http://localhost:42237/
+[rosmaster.master][INFO] 2026-09-16 01:33:17,014: +SUB [/imu/rpy] /ground_distance_node http://localhost:39799/
+[rosmaster.master][INFO] 2026-09-16 01:33:17,014: +SERVICE [/pose_compare_logger_eskf/get_loggers] /pose_compare_logger_eskf http://localhost:42237/
+[rosmaster.master][INFO] 2026-09-16 01:33:17,014: +SUB [/clock] /uwb_imu_tof_eskf_real_node http://localhost:35865/
+[rosmaster.master][INFO] 2026-09-16 01:33:17,015: +PUB [/ground_distance] /ground_distance_node http://localhost:39799/
+[rosmaster.master][INFO] 2026-09-16 01:33:17,015: +SERVICE [/pose_compare_logger_eskf/set_logger_level] /pose_compare_logger_eskf http://localhost:42237/
+[rosmaster.master][INFO] 2026-09-16 01:33:17,015: +CACHEDPARAM [/rosout_disable_topics_generation] by /ground_distance_node
+[rosmaster.master][INFO] 2026-09-16 01:33:17,017: +SUB [/clock] /pose_compare_logger_eskf http://localhost:42237/
+[rosmaster.master][INFO] 2026-09-16 01:33:17,023: +SUB [/eskf_mocap_truth_pose] /pose_compare_logger_eskf http://localhost:42237/
+[rosmaster.master][INFO] 2026-09-16 01:33:17,025: publisherUpdate[/rosout] -> http://localhost:35921/ ['http://localhost:36677/']
+[rosmaster.master][INFO] 2026-09-16 01:33:17,027: +SUB [/eskf_estimated_pose_with_covariance] /pose_compare_logger_eskf http://localhost:42237/
+[rosmaster.master][INFO] 2026-09-16 01:33:17,028: +CACHEDPARAM [/rosout_disable_topics_generation] by /pose_compare_logger_eskf
+[rosmaster.master][INFO] 2026-09-16 01:33:17,031: publisherUpdate[/rosout] -> http://localhost:35921/ ['http://localhost:36677/']: sec=0.01, result=[1, '', 0]
+[rosmaster.master][INFO] 2026-09-16 01:33:17,032: publisherUpdate[/rosout] -> http://localhost:35921/ ['http://localhost:36677/', 'http://localhost:34199/']
+[rosmaster.master][INFO] 2026-09-16 01:33:17,032: publisherUpdate[/rosout] -> http://localhost:35921/ ['http://localhost:36677/', 'http://localhost:34199/']: sec=0.00, result=[1, '', 0]
+[rosmaster.master][INFO] 2026-09-16 01:33:17,033: publisherUpdate[/rosout] -> http://localhost:35921/ ['http://localhost:36677/', 'http://localhost:34199/', 'http://localhost:39799/']
+[rosmaster.master][INFO] 2026-09-16 01:33:17,033: publisherUpdate[/rosout] -> http://localhost:35921/ ['http://localhost:36677/', 'http://localhost:34199/', 'http://localhost:39799/']: sec=0.00, result=[1, '', 0]
+[rosmaster.master][INFO] 2026-09-16 01:33:17,033: publisherUpdate[/rosout] -> http://localhost:35921/ ['http://localhost:36677/', 'http://localhost:34199/', 'http://localhost:39799/', 'http://localhost:35865/']
+[rosmaster.master][INFO] 2026-09-16 01:33:17,034: publisherUpdate[/rosout] -> http://localhost:35921/ ['http://localhost:36677/', 'http://localhost:34199/', 'http://localhost:39799/', 'http://localhost:35865/']: sec=0.00, result=[1, '', 0]
+[rosmaster.master][INFO] 2026-09-16 01:33:17,034: publisherUpdate[/rosout] -> http://localhost:35921/ ['http://localhost:36677/', 'http://localhost:34199/', 'http://localhost:39799/', 'http://localhost:35865/', 'http://localhost:42237/']
+[rosmaster.master][INFO] 2026-09-16 01:33:17,035: publisherUpdate[/rosout] -> http://localhost:35921/ ['http://localhost:36677/', 'http://localhost:34199/', 'http://localhost:39799/', 'http://localhost:35865/', 'http://localhost:42237/']: sec=0.00, result=[1, '', 0]
+[rosmaster.master][INFO] 2026-09-16 01:33:17,040: +PUB [/eskf_estimated_pose] /uwb_imu_tof_eskf_real_node http://localhost:35865/
+[rosmaster.master][INFO] 2026-09-16 01:33:17,040: +PUB [/eskf_estimated_pose_with_covariance] /uwb_imu_tof_eskf_real_node http://localhost:35865/
+[rosmaster.master][INFO] 2026-09-16 01:33:17,041: +PUB [/eskf_mocap_truth_pose] /uwb_imu_tof_eskf_real_node http://localhost:35865/
+[rosmaster.master][INFO] 2026-09-16 01:33:17,041: +PUB [/uwb_imu_tof_eskf_real_node/bias/gyro_A] /uwb_imu_tof_eskf_real_node http://localhost:35865/
+[rosmaster.master][INFO] 2026-09-16 01:33:17,041: +PUB [/uwb_imu_tof_eskf_real_node/bias/gyro_B] /uwb_imu_tof_eskf_real_node http://localhost:35865/
+[rosmaster.master][INFO] 2026-09-16 01:33:17,041: +PUB [/uwb_imu_tof_eskf_real_node/bias/acc_A] /uwb_imu_tof_eskf_real_node http://localhost:35865/
+[rosmaster.master][INFO] 2026-09-16 01:33:17,041: +PUB [/uwb_imu_tof_eskf_real_node/bias/acc_B] /uwb_imu_tof_eskf_real_node http://localhost:35865/
+[rosmaster.master][INFO] 2026-09-16 01:33:17,042: +SUB [/nlink_linktrack_nodeframe2] /uwb_imu_tof_eskf_real_node http://localhost:35865/
+[rosmaster.master][INFO] 2026-09-16 01:33:17,043: +SUB [/ground_distance] /uwb_imu_tof_eskf_real_node http://localhost:35865/
+[rosmaster.master][INFO] 2026-09-16 01:33:17,044: +SUB [/vrpn_client/UWB_rocket/pose] /uwb_imu_tof_eskf_real_node http://localhost:35865/
+[rosmaster.master][INFO] 2026-09-16 01:33:17,045: +SUB [/imu_A/data_raw] /uwb_imu_tof_eskf_real_node http://localhost:35865/
+[rosmaster.master][INFO] 2026-09-16 01:33:17,046: +SUB [/mynteye/imu/data_raw] /uwb_imu_tof_eskf_real_node http://localhost:35865/
+[rosmaster.master][INFO] 2026-09-16 01:33:17,046: +CACHEDPARAM [/rosout_disable_topics_generation] by /uwb_imu_tof_eskf_real_node
+[rosmaster.master][INFO] 2026-09-16 01:33:17,126: publisherUpdate[/eskf_estimated_pose_with_covariance] -> http://localhost:42237/ ['http://localhost:35865/']
+[rosmaster.master][INFO] 2026-09-16 01:33:17,128: publisherUpdate[/eskf_estimated_pose_with_covariance] -> http://localhost:42237/ ['http://localhost:35865/']: sec=0.00, result=[1, '', 0]
+[rosmaster.master][INFO] 2026-09-16 01:33:17,128: publisherUpdate[/eskf_mocap_truth_pose] -> http://localhost:42237/ ['http://localhost:35865/']
+[rosmaster.master][INFO] 2026-09-16 01:33:17,128: publisherUpdate[/eskf_mocap_truth_pose] -> http://localhost:42237/ ['http://localhost:35865/']: sec=0.00, result=[1, '', 0]
+[rosmaster.master][INFO] 2026-09-16 01:33:19,832: +PUB [/rosout] /play_1789522399830318104 http://localhost:34403/
+[rosmaster.master][INFO] 2026-09-16 01:33:19,832: publisherUpdate[/rosout] -> http://localhost:35921/ ['http://localhost:36677/', 'http://localhost:34199/', 'http://localhost:39799/', 'http://localhost:35865/', 'http://localhost:42237/', 'http://localhost:34403/']
+[rosmaster.master][INFO] 2026-09-16 01:33:19,832: +SERVICE [/play_1789522399830318104/get_loggers] /play_1789522399830318104 http://localhost:34403/
+[rosmaster.master][INFO] 2026-09-16 01:33:19,832: +SERVICE [/play_1789522399830318104/set_logger_level] /play_1789522399830318104 http://localhost:34403/
+[rosmaster.master][INFO] 2026-09-16 01:33:19,833: publisherUpdate[/rosout] -> http://localhost:35921/ ['http://localhost:36677/', 'http://localhost:34199/', 'http://localhost:39799/', 'http://localhost:35865/', 'http://localhost:42237/', 'http://localhost:34403/']: sec=0.00, result=[1, '', 0]
+[rosmaster.master][INFO] 2026-09-16 01:33:19,834: +SUB [/clock] /play_1789522399830318104 http://localhost:34403/
+[rosmaster.master][INFO] 2026-09-16 01:33:19,834: +PUB [/clock] /play_1789522399830318104 http://localhost:34403/
+[rosmaster.master][INFO] 2026-09-16 01:33:19,834: +SERVICE [/play_1789522399830318104/pause_playback] /play_1789522399830318104 http://localhost:34403/
+[rosmaster.master][INFO] 2026-09-16 01:33:19,834: +CACHEDPARAM [/rosout_disable_topics_generation] by /play_1789522399830318104
+[rosmaster.master][INFO] 2026-09-16 01:33:19,839: publisherUpdate[/clock] -> http://localhost:36677/ ['http://localhost:34403/']
+[rosmaster.master][INFO] 2026-09-16 01:33:19,839: publisherUpdate[/clock] -> http://localhost:36677/ ['http://localhost:34403/']: sec=0.00, result=[1, '', 0]
+[rosmaster.master][INFO] 2026-09-16 01:33:19,839: publisherUpdate[/clock] -> http://localhost:34199/ ['http://localhost:34403/']
+[rosmaster.master][INFO] 2026-09-16 01:33:19,840: publisherUpdate[/clock] -> http://localhost:34199/ ['http://localhost:34403/']: sec=0.00, result=[1, '', 0]
+[rosmaster.master][INFO] 2026-09-16 01:33:19,840: publisherUpdate[/clock] -> http://localhost:39799/ ['http://localhost:34403/']
+[rosmaster.master][INFO] 2026-09-16 01:33:19,841: publisherUpdate[/clock] -> http://localhost:39799/ ['http://localhost:34403/']: sec=0.00, result=[1, '', 0]
+[rosmaster.master][INFO] 2026-09-16 01:33:19,841: publisherUpdate[/clock] -> http://localhost:35865/ ['http://localhost:34403/']
+[rosmaster.master][INFO] 2026-09-16 01:33:19,841: publisherUpdate[/clock] -> http://localhost:35865/ ['http://localhost:34403/']: sec=0.00, result=[1, '', 0]
+[rosmaster.master][INFO] 2026-09-16 01:33:19,841: publisherUpdate[/clock] -> http://localhost:42237/ ['http://localhost:34403/']
+[rosmaster.master][INFO] 2026-09-16 01:33:19,842: publisherUpdate[/clock] -> http://localhost:42237/ ['http://localhost:34403/']: sec=0.00, result=[1, '', 0]
+[rosmaster.master][INFO] 2026-09-16 01:33:19,842: publisherUpdate[/clock] -> http://localhost:34403/ ['http://localhost:34403/']
+[rosmaster.master][INFO] 2026-09-16 01:33:19,842: publisherUpdate[/clock] -> http://localhost:34403/ ['http://localhost:34403/']: sec=0.00, result=[1, '', 0]
+[rosmaster.master][INFO] 2026-09-16 01:33:19,854: +PUB [/mynteye/imu/data_raw] /play_1789522399830318104 http://localhost:34403/
+[rosmaster.master][INFO] 2026-09-16 01:33:19,855: +PUB [/nlink_linktrack_nodeframe2] /play_1789522399830318104 http://localhost:34403/
+[rosmaster.master][INFO] 2026-09-16 01:33:19,855: +PUB [/vrpn_client/UWB_rocket/pose] /play_1789522399830318104 http://localhost:34403/
+[rosmaster.master][INFO] 2026-09-16 01:33:19,855: +PUB [/nlink_tofsensem_frame0] /play_1789522399830318104 http://localhost:34403/
+[rosmaster.master][INFO] 2026-09-16 01:33:19,930: publisherUpdate[/mynteye/imu/data_raw] -> http://localhost:36677/ ['http://localhost:34403/']
+[rosmaster.master][INFO] 2026-09-16 01:33:19,931: publisherUpdate[/mynteye/imu/data_raw] -> http://localhost:36677/ ['http://localhost:34403/']: sec=0.00, result=[1, '', 0]
+[rosmaster.master][INFO] 2026-09-16 01:33:19,931: publisherUpdate[/mynteye/imu/data_raw] -> http://localhost:35865/ ['http://localhost:34403/']
+[rosmaster.master][INFO] 2026-09-16 01:33:19,932: publisherUpdate[/mynteye/imu/data_raw] -> http://localhost:35865/ ['http://localhost:34403/']: sec=0.00, result=[1, '', 0]
+[rosmaster.master][INFO] 2026-09-16 01:33:19,932: publisherUpdate[/nlink_linktrack_nodeframe2] -> http://localhost:35865/ ['http://localhost:34403/']
+[rosmaster.master][INFO] 2026-09-16 01:33:19,932: publisherUpdate[/nlink_linktrack_nodeframe2] -> http://localhost:35865/ ['http://localhost:34403/']: sec=0.00, result=[1, '', 0]
+[rosmaster.master][INFO] 2026-09-16 01:33:19,932: publisherUpdate[/vrpn_client/UWB_rocket/pose] -> http://localhost:35865/ ['http://localhost:34403/']
+[rosmaster.master][INFO] 2026-09-16 01:33:19,933: publisherUpdate[/vrpn_client/UWB_rocket/pose] -> http://localhost:35865/ ['http://localhost:34403/']: sec=0.00, result=[1, '', 0]
+[rosmaster.master][INFO] 2026-09-16 01:33:19,933: publisherUpdate[/nlink_tofsensem_frame0] -> http://localhost:39799/ ['http://localhost:34403/']
+[rosmaster.master][INFO] 2026-09-16 01:33:19,933: publisherUpdate[/nlink_tofsensem_frame0] -> http://localhost:39799/ ['http://localhost:34403/']: sec=0.00, result=[1, '', 0]
+[rosmaster.master][INFO] 2026-09-16 01:33:21,858: +CACHEDPARAM [/rosout/omit_topics] by /rosout
+[rosmaster.master][INFO] 2026-09-16 01:33:52,873: -PUB [/rosout] /play_1789522399830318104 http://localhost:34403/
+[rosmaster.master][INFO] 2026-09-16 01:33:52,873: publisherUpdate[/rosout] -> http://localhost:35921/ ['http://localhost:36677/', 'http://localhost:34199/', 'http://localhost:39799/', 'http://localhost:35865/', 'http://localhost:42237/']
+[rosmaster.master][INFO] 2026-09-16 01:33:52,873: -PUB [/clock] /play_1789522399830318104 http://localhost:34403/
+[rosmaster.master][INFO] 2026-09-16 01:33:52,874: publisherUpdate[/clock] -> http://localhost:36677/ []
+[rosmaster.master][INFO] 2026-09-16 01:33:52,874: publisherUpdate[/rosout] -> http://localhost:35921/ ['http://localhost:36677/', 'http://localhost:34199/', 'http://localhost:39799/', 'http://localhost:35865/', 'http://localhost:42237/']: sec=0.00, result=[1, '', 0]
+[rosmaster.master][INFO] 2026-09-16 01:33:52,874: -PUB [/mynteye/imu/data_raw] /play_1789522399830318104 http://localhost:34403/
+[rosmaster.master][INFO] 2026-09-16 01:33:52,875: publisherUpdate[/clock] -> http://localhost:34199/ []
+[rosmaster.master][INFO] 2026-09-16 01:33:52,875: publisherUpdate[/clock] -> http://localhost:36677/ []: sec=0.00, result=[1, '', 0]
+[rosmaster.master][INFO] 2026-09-16 01:33:52,875: -PUB [/nlink_linktrack_nodeframe2] /play_1789522399830318104 http://localhost:34403/
+[rosmaster.master][INFO] 2026-09-16 01:33:52,875: publisherUpdate[/clock] -> http://localhost:39799/ []
+[rosmaster.master][INFO] 2026-09-16 01:33:52,876: -PUB [/vrpn_client/UWB_rocket/pose] /play_1789522399830318104 http://localhost:34403/
+[rosmaster.master][INFO] 2026-09-16 01:33:52,876: publisherUpdate[/clock] -> http://localhost:34199/ []: sec=0.00, result=[1, '', 0]
+[rosmaster.master][INFO] 2026-09-16 01:33:52,876: publisherUpdate[/clock] -> http://localhost:39799/ []: sec=0.00, result=[1, '', 0]
+[rosmaster.master][INFO] 2026-09-16 01:33:52,876: publisherUpdate[/clock] -> http://localhost:35865/ []
+[rosmaster.master][INFO] 2026-09-16 01:33:52,876: -PUB [/nlink_tofsensem_frame0] /play_1789522399830318104 http://localhost:34403/
+[rosmaster.master][INFO] 2026-09-16 01:33:52,877: publisherUpdate[/clock] -> http://localhost:42237/ []
+[rosmaster.master][INFO] 2026-09-16 01:33:52,877: -SUB [/clock] /play_1789522399830318104 http://localhost:34403/
+[rosmaster.master][INFO] 2026-09-16 01:33:52,877: publisherUpdate[/clock] -> http://localhost:35865/ []: sec=0.00, result=[1, '', 0]
+[rosmaster.master][INFO] 2026-09-16 01:33:52,878: publisherUpdate[/clock] -> http://localhost:34403/ []
+[rosmaster.master][INFO] 2026-09-16 01:33:52,878: -SERVICE [/play_1789522399830318104/get_loggers] /play_1789522399830318104 rosrpc://localhost:36299
+[rosmaster.master][INFO] 2026-09-16 01:33:52,878: publisherUpdate[/clock] -> http://localhost:42237/ []: sec=0.00, result=[1, '', 0]
+[rosmaster.master][INFO] 2026-09-16 01:33:52,878: -SERVICE [/play_1789522399830318104/set_logger_level] /play_1789522399830318104 rosrpc://localhost:36299
+[rosmaster.master][INFO] 2026-09-16 01:33:52,878: publisherUpdate[/mynteye/imu/data_raw] -> http://localhost:36677/ []
+[rosmaster.master][INFO] 2026-09-16 01:33:52,879: -SERVICE [/play_1789522399830318104/pause_playback] /play_1789522399830318104 rosrpc://localhost:36299
+[rosmaster.master][INFO] 2026-09-16 01:33:52,879: publisherUpdate[/mynteye/imu/data_raw] -> http://localhost:36677/ []: sec=0.00, result=[1, '', 0]
+[rosmaster.master][INFO] 2026-09-16 01:33:52,879: -CACHEDPARAM [/rosout_disable_topics_generation] by /play_1789522399830318104
+[rosmaster.master][INFO] 2026-09-16 01:33:52,879: publisherUpdate[/mynteye/imu/data_raw] -> http://localhost:35865/ []
+[rosmaster.master][INFO] 2026-09-16 01:33:52,880: publisherUpdate[/mynteye/imu/data_raw] -> http://localhost:35865/ []: sec=0.00, result=[1, '', 0]
+[rosmaster.master][INFO] 2026-09-16 01:33:52,880: publisherUpdate[/nlink_linktrack_nodeframe2] -> http://localhost:35865/ []
+[rosmaster.master][INFO] 2026-09-16 01:33:52,880: publisherUpdate[/nlink_linktrack_nodeframe2] -> http://localhost:35865/ []: sec=0.00, result=[1, '', 0]
+[rosmaster.master][INFO] 2026-09-16 01:33:52,880: publisherUpdate[/vrpn_client/UWB_rocket/pose] -> http://localhost:35865/ []
+[rosmaster.master][INFO] 2026-09-16 01:33:52,880: publisherUpdate[/vrpn_client/UWB_rocket/pose] -> http://localhost:35865/ []: sec=0.00, result=[1, '', 0]
+[rosmaster.master][INFO] 2026-09-16 01:33:52,880: publisherUpdate[/nlink_tofsensem_frame0] -> http://localhost:39799/ []
+[rosmaster.master][INFO] 2026-09-16 01:33:52,881: publisherUpdate[/nlink_tofsensem_frame0] -> http://localhost:39799/ []: sec=0.00, result=[1, '', 0]
+[rosmaster.master][INFO] 2026-09-16 01:33:52,883: publisherUpdate[/clock] -> http://localhost:34403/ []: sec=0.00, exception=[Errno 111] Connection refused
+[rosmaster.threadpool][ERROR] 2026-09-16 01:33:52,884: Traceback (most recent call last):
+  File "/opt/ros/noetic/lib/python3/dist-packages/rosmaster/threadpool.py", line 218, in run
+    result = cmd(*args)
+  File "/opt/ros/noetic/lib/python3/dist-packages/rosmaster/master_api.py", line 210, in publisher_update_task
+    ret = xmlrpcapi(api).publisherUpdate('/master', topic, pub_uris)
+  File "/usr/lib/python3.8/xmlrpc/client.py", line 1109, in __call__
+    return self.__send(self.__name, args)
+  File "/usr/lib/python3.8/xmlrpc/client.py", line 1450, in __request
+    response = self.__transport.request(
+  File "/usr/lib/python3.8/xmlrpc/client.py", line 1153, in request
+    return self.single_request(host, handler, request_body, verbose)
+  File "/usr/lib/python3.8/xmlrpc/client.py", line 1165, in single_request
+    http_conn = self.send_request(host, handler, request_body, verbose)
+  File "/usr/lib/python3.8/xmlrpc/client.py", line 1278, in send_request
+    self.send_content(connection, request_body)
+  File "/usr/lib/python3.8/xmlrpc/client.py", line 1308, in send_content
+    connection.endheaders(request_body)
+  File "/usr/lib/python3.8/http/client.py", line 1251, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+  File "/usr/lib/python3.8/http/client.py", line 1011, in _send_output
+    self.send(msg)
+  File "/usr/lib/python3.8/http/client.py", line 951, in send
+    self.connect()
+  File "/usr/lib/python3.8/http/client.py", line 922, in connect
+    self.sock = self._create_connection(
+  File "/usr/lib/python3.8/socket.py", line 808, in create_connection
+    raise err
+  File "/usr/lib/python3.8/socket.py", line 796, in create_connection
+    sock.connect(sa)
+ConnectionRefusedError: [Errno 111] Connection refused
+
+[rosmaster.master][INFO] 2026-09-16 01:33:54,278: -PUB [/rosout] /fake_imu_a_node http://localhost:34199/
+[rosmaster.master][INFO] 2026-09-16 01:33:54,279: -PUB [/imu_A/data_raw] /fake_imu_a_node http://localhost:34199/
+[rosmaster.master][INFO] 2026-09-16 01:33:54,279: -SUB [/clock] /fake_imu_a_node http://localhost:34199/
+[rosmaster.master][INFO] 2026-09-16 01:33:54,279: -SERVICE [/fake_imu_a_node/get_loggers] /fake_imu_a_node rosrpc://localhost:51035
+[rosmaster.master][INFO] 2026-09-16 01:33:54,279: -SERVICE [/fake_imu_a_node/set_logger_level] /fake_imu_a_node rosrpc://localhost:51035
+[rosmaster.master][INFO] 2026-09-16 01:33:54,280: -CACHEDPARAM [/rosout_disable_topics_generation] by /fake_imu_a_node
+[rosmaster.master][INFO] 2026-09-16 01:33:54,280: -PUB [/rosout] /pose_compare_logger_eskf http://localhost:42237/
+[rosmaster.master][INFO] 2026-09-16 01:33:54,280: -SUB [/clock] /pose_compare_logger_eskf http://localhost:42237/
+[rosmaster.master][INFO] 2026-09-16 01:33:54,281: -SUB [/eskf_mocap_truth_pose] /pose_compare_logger_eskf http://localhost:42237/
+[rosmaster.master][INFO] 2026-09-16 01:33:54,281: -SUB [/eskf_estimated_pose_with_covariance] /pose_compare_logger_eskf http://localhost:42237/
+[rosmaster.master][INFO] 2026-09-16 01:33:54,281: -SERVICE [/pose_compare_logger_eskf/get_loggers] /pose_compare_logger_eskf rosrpc://localhost:56151
+[rosmaster.master][INFO] 2026-09-16 01:33:54,281: -SERVICE [/pose_compare_logger_eskf/set_logger_level] /pose_compare_logger_eskf rosrpc://localhost:56151
+[rosmaster.master][INFO] 2026-09-16 01:33:54,282: -CACHEDPARAM [/rosout_disable_topics_generation] by /pose_compare_logger_eskf
+[rosmaster.master][INFO] 2026-09-16 01:33:54,282: -PUB [/rosout] /uwb_imu_tof_eskf_real_node http://localhost:35865/
+[rosmaster.master][INFO] 2026-09-16 01:33:54,283: -PUB [/eskf_estimated_pose] /uwb_imu_tof_eskf_real_node http://localhost:35865/
+[rosmaster.master][INFO] 2026-09-16 01:33:54,283: publisherUpdate[/rosout] -> http://localhost:35921/ ['http://localhost:36677/', 'http://localhost:39799/', 'http://localhost:35865/', 'http://localhost:42237/']
+[rosmaster.master][INFO] 2026-09-16 01:33:54,283: -PUB [/eskf_estimated_pose_with_covariance] /uwb_imu_tof_eskf_real_node http://localhost:35865/
+[rosmaster.master][INFO] 2026-09-16 01:33:54,284: -PUB [/eskf_mocap_truth_pose] /uwb_imu_tof_eskf_real_node http://localhost:35865/
+[rosmaster.master][INFO] 2026-09-16 01:33:54,284: publisherUpdate[/rosout] -> http://localhost:35921/ ['http://localhost:36677/', 'http://localhost:39799/', 'http://localhost:35865/', 'http://localhost:42237/']: sec=0.00, result=[1, '', 0]
+[rosmaster.master][INFO] 2026-09-16 01:33:54,284: publisherUpdate[/imu_A/data_raw] -> http://localhost:35865/ []
+[rosmaster.master][INFO] 2026-09-16 01:33:54,284: -PUB [/uwb_imu_tof_eskf_real_node/bias/gyro_A] /uwb_imu_tof_eskf_real_node http://localhost:35865/
+[rosmaster.master][INFO] 2026-09-16 01:33:54,284: publisherUpdate[/rosout] -> http://localhost:35921/ ['http://localhost:36677/', 'http://localhost:39799/', 'http://localhost:35865/']
+[rosmaster.master][INFO] 2026-09-16 01:33:54,284: -PUB [/uwb_imu_tof_eskf_real_node/bias/gyro_B] /uwb_imu_tof_eskf_real_node http://localhost:35865/
+[rosmaster.master][INFO] 2026-09-16 01:33:54,285: -PUB [/uwb_imu_tof_eskf_real_node/bias/acc_A] /uwb_imu_tof_eskf_real_node http://localhost:35865/
+[rosmaster.master][INFO] 2026-09-16 01:33:54,285: publisherUpdate[/rosout] -> http://localhost:35921/ ['http://localhost:36677/', 'http://localhost:39799/', 'http://localhost:35865/']: sec=0.00, result=[1, '', 0]
+[rosmaster.master][INFO] 2026-09-16 01:33:54,285: publisherUpdate[/rosout] -> http://localhost:35921/ ['http://localhost:36677/', 'http://localhost:39799/']
+[rosmaster.master][INFO] 2026-09-16 01:33:54,285: -PUB [/uwb_imu_tof_eskf_real_node/bias/acc_B] /uwb_imu_tof_eskf_real_node http://localhost:35865/
+[rosmaster.master][INFO] 2026-09-16 01:33:54,286: -SUB [/clock] /uwb_imu_tof_eskf_real_node http://localhost:35865/
+[rosmaster.master][INFO] 2026-09-16 01:33:54,286: publisherUpdate[/rosout] -> http://localhost:35921/ ['http://localhost:36677/', 'http://localhost:39799/']: sec=0.00, result=[1, '', 0]
+[rosmaster.master][INFO] 2026-09-16 01:33:54,286: -SUB [/nlink_linktrack_nodeframe2] /uwb_imu_tof_eskf_real_node http://localhost:35865/
+[rosmaster.master][INFO] 2026-09-16 01:33:54,286: -SUB [/ground_distance] /uwb_imu_tof_eskf_real_node http://localhost:35865/
+[rosmaster.master][INFO] 2026-09-16 01:33:54,287: -SUB [/vrpn_client/UWB_rocket/pose] /uwb_imu_tof_eskf_real_node http://localhost:35865/
+[rosmaster.master][INFO] 2026-09-16 01:33:54,287: -SUB [/imu_A/data_raw] /uwb_imu_tof_eskf_real_node http://localhost:35865/
+[rosmaster.master][INFO] 2026-09-16 01:33:54,287: -SUB [/mynteye/imu/data_raw] /uwb_imu_tof_eskf_real_node http://localhost:35865/
+[rosmaster.master][INFO] 2026-09-16 01:33:54,287: -SERVICE [/uwb_imu_tof_eskf_real_node/get_loggers] /uwb_imu_tof_eskf_real_node rosrpc://localhost:41451
+[rosmaster.master][INFO] 2026-09-16 01:33:54,287: -SERVICE [/uwb_imu_tof_eskf_real_node/set_logger_level] /uwb_imu_tof_eskf_real_node rosrpc://localhost:41451
+[rosmaster.master][INFO] 2026-09-16 01:33:54,288: -CACHEDPARAM [/rosout_disable_topics_generation] by /uwb_imu_tof_eskf_real_node
+[rosmaster.master][INFO] 2026-09-16 01:33:54,293: publisherUpdate[/imu_A/data_raw] -> http://localhost:35865/ []: sec=0.01, exception=[Errno 111] Connection refused
+[rosmaster.threadpool][ERROR] 2026-09-16 01:33:54,293: Traceback (most recent call last):
+  File "/opt/ros/noetic/lib/python3/dist-packages/rosmaster/threadpool.py", line 218, in run
+    result = cmd(*args)
+  File "/opt/ros/noetic/lib/python3/dist-packages/rosmaster/master_api.py", line 210, in publisher_update_task
+    ret = xmlrpcapi(api).publisherUpdate('/master', topic, pub_uris)
+  File "/usr/lib/python3.8/xmlrpc/client.py", line 1109, in __call__
+    return self.__send(self.__name, args)
+  File "/usr/lib/python3.8/xmlrpc/client.py", line 1450, in __request
+    response = self.__transport.request(
+  File "/usr/lib/python3.8/xmlrpc/client.py", line 1153, in request
+    return self.single_request(host, handler, request_body, verbose)
+  File "/usr/lib/python3.8/xmlrpc/client.py", line 1165, in single_request
+    http_conn = self.send_request(host, handler, request_body, verbose)
+  File "/usr/lib/python3.8/xmlrpc/client.py", line 1278, in send_request
+    self.send_content(connection, request_body)
+  File "/usr/lib/python3.8/xmlrpc/client.py", line 1308, in send_content
+    connection.endheaders(request_body)
+  File "/usr/lib/python3.8/http/client.py", line 1251, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+  File "/usr/lib/python3.8/http/client.py", line 1011, in _send_output
+    self.send(msg)
+  File "/usr/lib/python3.8/http/client.py", line 951, in send
+    self.connect()
+  File "/usr/lib/python3.8/http/client.py", line 922, in connect
+    self.sock = self._create_connection(
+  File "/usr/lib/python3.8/socket.py", line 808, in create_connection
+    raise err
+  File "/usr/lib/python3.8/socket.py", line 796, in create_connection
+    sock.connect(sa)
+ConnectionRefusedError: [Errno 111] Connection refused
+
+[rosmaster.master][INFO] 2026-09-16 01:33:54,682: -PUB [/rosout] /imu_mahony_node http://localhost:36677/
+[rosmaster.master][INFO] 2026-09-16 01:33:54,682: -PUB [/imu/rpy] /imu_mahony_node http://localhost:36677/
+[rosmaster.master][INFO] 2026-09-16 01:33:54,682: -SUB [/clock] /imu_mahony_node http://localhost:36677/
+[rosmaster.master][INFO] 2026-09-16 01:33:54,683: -SUB [/mynteye/imu/data_raw] /imu_mahony_node http://localhost:36677/
+[rosmaster.master][INFO] 2026-09-16 01:33:54,683: -SERVICE [/imu_mahony_node/get_loggers] /imu_mahony_node rosrpc://localhost:52699
+[rosmaster.master][INFO] 2026-09-16 01:33:54,683: -SERVICE [/imu_mahony_node/set_logger_level] /imu_mahony_node rosrpc://localhost:52699
+[rosmaster.master][INFO] 2026-09-16 01:33:54,683: -PUB [/rosout] /ground_distance_node http://localhost:39799/
+[rosmaster.master][INFO] 2026-09-16 01:33:54,683: -CACHEDPARAM [/rosout_disable_topics_generation] by /imu_mahony_node
+[rosmaster.master][INFO] 2026-09-16 01:33:54,684: -PUB [/ground_distance] /ground_distance_node http://localhost:39799/
+[rosmaster.master][INFO] 2026-09-16 01:33:54,684: -SUB [/clock] /ground_distance_node http://localhost:39799/
+[rosmaster.master][INFO] 2026-09-16 01:33:54,684: -SUB [/nlink_tofsensem_frame0] /ground_distance_node http://localhost:39799/
+[rosmaster.master][INFO] 2026-09-16 01:33:54,685: -SUB [/imu/rpy] /ground_distance_node http://localhost:39799/
+[rosmaster.master][INFO] 2026-09-16 01:33:54,685: -SERVICE [/ground_distance_node/get_loggers] /ground_distance_node rosrpc://localhost:58237
+[rosmaster.master][INFO] 2026-09-16 01:33:54,685: -SERVICE [/ground_distance_node/set_logger_level] /ground_distance_node rosrpc://localhost:58237
+[rosmaster.master][INFO] 2026-09-16 01:33:54,685: -CACHEDPARAM [/rosout_disable_topics_generation] by /ground_distance_node
+[rosmaster.master][INFO] 2026-09-16 01:33:54,687: publisherUpdate[/rosout] -> http://localhost:35921/ ['http://localhost:39799/']
+[rosmaster.master][INFO] 2026-09-16 01:33:54,687: publisherUpdate[/imu/rpy] -> http://localhost:39799/ []
+[rosmaster.master][INFO] 2026-09-16 01:33:54,687: publisherUpdate[/rosout] -> http://localhost:35921/ ['http://localhost:39799/']: sec=0.00, result=[1, '', 0]
+[rosmaster.master][INFO] 2026-09-16 01:33:54,687: publisherUpdate[/rosout] -> http://localhost:35921/ []
+[rosmaster.master][INFO] 2026-09-16 01:33:54,688: publisherUpdate[/rosout] -> http://localhost:35921/ []: sec=0.00, result=[1, '', 0]
+[rosmaster.master][INFO] 2026-09-16 01:33:54,693: publisherUpdate[/imu/rpy] -> http://localhost:39799/ []: sec=0.01, exception=[Errno 111] Connection refused
+[rosmaster.threadpool][ERROR] 2026-09-16 01:33:54,694: Traceback (most recent call last):
+  File "/opt/ros/noetic/lib/python3/dist-packages/rosmaster/threadpool.py", line 218, in run
+    result = cmd(*args)
+  File "/opt/ros/noetic/lib/python3/dist-packages/rosmaster/master_api.py", line 210, in publisher_update_task
+    ret = xmlrpcapi(api).publisherUpdate('/master', topic, pub_uris)
+  File "/usr/lib/python3.8/xmlrpc/client.py", line 1109, in __call__
+    return self.__send(self.__name, args)
+  File "/usr/lib/python3.8/xmlrpc/client.py", line 1450, in __request
+    response = self.__transport.request(
+  File "/usr/lib/python3.8/xmlrpc/client.py", line 1153, in request
+    return self.single_request(host, handler, request_body, verbose)
+  File "/usr/lib/python3.8/xmlrpc/client.py", line 1165, in single_request
+    http_conn = self.send_request(host, handler, request_body, verbose)
+  File "/usr/lib/python3.8/xmlrpc/client.py", line 1278, in send_request
+    self.send_content(connection, request_body)
+  File "/usr/lib/python3.8/xmlrpc/client.py", line 1308, in send_content
+    connection.endheaders(request_body)
+  File "/usr/lib/python3.8/http/client.py", line 1251, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+  File "/usr/lib/python3.8/http/client.py", line 1011, in _send_output
+    self.send(msg)
+  File "/usr/lib/python3.8/http/client.py", line 951, in send
+    self.connect()
+  File "/usr/lib/python3.8/http/client.py", line 922, in connect
+    self.sock = self._create_connection(
+  File "/usr/lib/python3.8/socket.py", line 808, in create_connection
+    raise err
+  File "/usr/lib/python3.8/socket.py", line 796, in create_connection
+    sock.connect(sa)
+ConnectionRefusedError: [Errno 111] Connection refused
+
+[rosmaster.master][INFO] 2026-09-16 01:33:55,089: -PUB [/rosout_agg] /rosout http://localhost:35921/
+[rosmaster.master][INFO] 2026-09-16 01:33:55,089: -SUB [/rosout] /rosout http://localhost:35921/
+[rosmaster.master][INFO] 2026-09-16 01:33:55,090: -SERVICE [/rosout/get_loggers] /rosout rosrpc://localhost:49091
+[rosmaster.master][INFO] 2026-09-16 01:33:55,090: -SERVICE [/rosout/set_logger_level] /rosout rosrpc://localhost:49091
+[rosmaster.master][INFO] 2026-09-16 01:33:55,090: -CACHEDPARAM [/rosout/omit_topics] by /rosout
+[rosmaster.main][INFO] 2026-09-16 01:33:55,130: keyboard interrupt, will exit
+[rosmaster.main][INFO] 2026-09-16 01:33:55,130: stopping master...
+[rospy.core][INFO] 2026-09-16 01:33:55,130: signal_shutdown [atexit]

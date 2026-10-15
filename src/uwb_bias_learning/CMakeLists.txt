@@ -31,6 +31,9 @@ catkin_install_python(PROGRAMS
   scripts/evaluate.py
   scripts/export_model.py
   scripts/predict_bias.py
+  scripts/estimate_range_bias_from_mocap.py
+  scripts/analyze_multitag_uwb_bias_bag.py
+  scripts/plot_multitag_uwb_bias_time.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

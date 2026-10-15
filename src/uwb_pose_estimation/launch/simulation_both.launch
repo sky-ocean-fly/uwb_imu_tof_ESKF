@@ -37,20 +37,34 @@
     <param name="publish_rate_hz" value="50.0" />
   </node> -->
 
-    <!-- 假高度ESKF -->
-    <node pkg="uwb_pose_estimation"
+    <!-- 假高度 ESKF（默认启用）。与下方的 IMU bias 版本二选一。 -->
+    <!-- <node pkg="uwb_pose_estimation"
           type="uwb_imu_tof_eskf_fake_height_node"
           name="eskf_fake_height"
           output="screen">
 
         <rosparam command="load" file="$(arg eskf_config)" />
-        <param name="use_uwb_fake_height" value="false"/>
-        <param name="uwb_fake_height_min_information" value="1e-8"/>
+        <param name="eskf_pose_topic"
+               value="/eskf_fake_height/estimated_pose"/>
+        <param name="mocap_truth_topic"
+               value="/eskf_fake_height/mocap_truth_pose"/>
+    </node> -->
+
+    <!-- 带 IMU bias 在线估计的假高度 ESKF。 -->
+    <!-- 使用时：注释掉上方的 eskf_fake_height 节点，再删除下方两个单独的注释标记。 -->
+    <node pkg="uwb_pose_estimation"
+          type="uwb_imu_tof_eskf_fake_height_add_imu_bias_node"
+          name="eskf_fake_height_add_imu_bias"
+          output="screen">
+
+        <rosparam command="load" file="$(arg eskf_config)" />
+        <param name="estimate_imu_bias" value="true" />
         <param name="eskf_pose_topic"
                value="/eskf_fake_height/estimated_pose"/>
         <param name="mocap_truth_topic"
                value="/eskf_fake_height/mocap_truth_pose"/>
     </node>
+   
 
   <group if="$(arg run_loggers)">
     <node pkg="uwb_pose_estimation"
@@ -74,7 +88,7 @@
           output="screen">
       <param name="est_topic" value="/eskf_fake_height/estimated_pose" />
       <param name="gt_topic" value="/sim/relative_truth_pose" />
-      <param name="csv_path" value="$(find uwb_pose_estimation)/sim_result/eskf_pose_compare1.csv" />
+      <param name="csv_path" value="$(find uwb_pose_estimation)/sim_result/eskf_pose_compare2.csv" />
       <param name="queue_size" value="200" />
       <param name="sync_slop" value="0.03" />
       <param name="method_name" value="ESKF" />

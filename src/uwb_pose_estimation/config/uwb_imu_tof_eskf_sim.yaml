@@ -26,12 +26,13 @@ sigma_acc_A: 0.020
 sigma_acc_B: 0.020
 
 # These are per-measurement standard deviations.
-sigma_uwb: 20.0  #0.033 #0.1表示有正偏置的时候
-sigma_tof: 0.020
+sigma_uwb: 0.2  #0.033 #0.1表示有正偏置的时候
+sigma_tof: 0.1
 
 uwb_residual_gate: 2.0
 tof_residual_gate: 1.0
 
+# Enable the per-UWB-batch nuisance height; the real p_z is still updated by IMU/ToF.
 use_uwb_fake_height: true
 uwb_fake_height_min_information: 1.0e-8
 

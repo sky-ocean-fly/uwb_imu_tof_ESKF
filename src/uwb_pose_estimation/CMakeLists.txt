@@ -80,9 +80,18 @@ target_link_libraries(pose_compare_logger ${catkin_LIBRARIES})
 add_dependencies(pose_compare_logger ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 # Original ESKF node.
-add_executable(uwb_imu_tof_eskf_node src/uwb_imu_tof_eskf_node.cpp)
-target_link_libraries(uwb_imu_tof_eskf_node ${catkin_LIBRARIES})
-add_dependencies(uwb_imu_tof_eskf_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_executable(uwb_imu_tof_eskf_real_node src/uwb_imu_tof_eskf_real_node.cpp)
+target_link_libraries(uwb_imu_tof_eskf_real_node ${catkin_LIBRARIES})
+add_dependencies(uwb_imu_tof_eskf_real_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+# Real-data ESKF with online IMU bias estimation.
+add_executable(uwb_imu_tof_eskf_real_add_imu_bias_node
+  src/uwb_imu_tof_eskf_real_node_add_imu_bias.cpp)
+target_link_libraries(uwb_imu_tof_eskf_real_add_imu_bias_node ${catkin_LIBRARIES})
+add_dependencies(uwb_imu_tof_eskf_real_add_imu_bias_node
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+)
 
 # Simulation version of the ESKF node.
 add_executable(uwb_imu_tof_eskf_sim_node src/uwb_imu_tof_eskf_sim_node.cpp)
@@ -102,6 +111,15 @@ add_dependencies(uwb_imu_tof_eskf_fake_height_node
   ${catkin_EXPORTED_TARGETS}
 )
 
+# Fake-height ESKF with online IMU bias estimation.
+add_executable(uwb_imu_tof_eskf_fake_height_add_imu_bias_node
+  src/uwb_imu_tof_eskf_fake_height_add_imu_bias.cpp)
+target_link_libraries(uwb_imu_tof_eskf_fake_height_add_imu_bias_node ${catkin_LIBRARIES})
+add_dependencies(uwb_imu_tof_eskf_fake_height_add_imu_bias_node
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+)
+
 
 # Existing fake IMU node, if retained in the package.
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/fake_imu_node.cpp")
@@ -114,9 +132,12 @@ install(TARGETS
   ${PROJECT_NAME}_node
   uwb_localization_sim_node
   pose_compare_logger
-  uwb_imu_tof_eskf_node
+  uwb_imu_tof_eskf_real_node
+  uwb_imu_tof_eskf_real_add_imu_bias_node
   uwb_imu_tof_eskf_sim_node
   sim_data_generator_node
+  uwb_imu_tof_eskf_fake_height_node
+  uwb_imu_tof_eskf_fake_height_add_imu_bias_node
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

@@ -71,6 +71,32 @@ range_corrected_m = range_m - predicted_bias_m
 
 偏置允许为正或负，代码不得取绝对值、ReLU 或强制非负。
 
+## 刚体原点不在 UWB 天线中心时
+
+若动捕给出机体相对基站的位姿 `T_base_body = [R_base_body, t_base_body]`，标签
+天线相位中心在机体系的坐标为 `p_body_tag`，基站天线相位中心在基站系的坐标为
+`p_base_anchor`，则：
+
+```text
+p_base_tag = R_base_body * p_body_tag + t_base_body
+delta_base = p_base_tag - p_base_anchor
+distance_gt_m = norm(delta_base)
+uwb_bias_m = range_m - distance_gt_m
+```
+
+若动捕相对位姿恰好相反，为 `T_body_base`，则在机体系中等价计算：
+
+```text
+p_body_anchor = R_body_base * p_base_anchor + t_body_base
+delta_body = p_body_tag - p_body_anchor
+distance_gt_m = norm(delta_body)
+```
+
+两种写法的距离必须一致。坐标必须是天线相位中心（或设备定义的测距参考点），而不只是
+外壳边缘；所有量均使用米。可用 `scripts/estimate_range_bias_from_mocap.py` 对同步后的 CSV
+逐帧计算并汇总。脚本默认读取本包 canonical CSV 的 `rel_t*`、`rel_q*`、`range_m` 字段，
+默认把相对位姿解释为 `T_base_body`；实际 A/B 角色不同时必须显式选择正确方向。
+
 ## 单位
 
 - 距离、位置、偏置：米。

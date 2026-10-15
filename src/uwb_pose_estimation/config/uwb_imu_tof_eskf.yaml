@@ -8,13 +8,14 @@ imu_b_topic: /mynteye/imu/data_raw # 无人机/标签B的IMU；按你的实际�
 mocap_topic: /vrpn_client/UWB_rocket/pose
 
 eskf_pose_topic: /eskf_estimated_pose
+eskf_pose_cov_topic: /eskf_estimated_pose_with_covariance
 mocap_truth_topic: /eskf_mocap_truth_pose
 frame_id: anchor_frame_A
 
 # 推荐先运行原uwb_localization_node，让它发布一次/estimated_pose作为ESKF初值。
-init_from_pose_topic: true
+init_from_pose_topic: false
 init_pose_topic: /estimated_pose
-init_from_mocap: false            # 只建议调试时改true；正式实验不要用动捕初始化
+init_from_mocap: true            # 只建议调试时改true；正式实验不要用动捕初始化
 
 # 现有/ground_distance的point.y已经是垂直高度，所以默认true。
 # 若改为订阅原始ToF斜距point.x，再把这里改false，使用推导中的 -alpha/beta 模型。

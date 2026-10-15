@@ -171,8 +171,8 @@ nlink_parser/CMakeFiles/nlink_parser_generate_messages_py: /home/yu/catkin_works
 
 /home/yu/catkin_workspace/devel/lib/python3/dist-packages/nlink_parser/msg/_LinktrackNodeframe4.py: /opt/ros/noetic/lib/genpy/genmsg_py.py
 /home/yu/catkin_workspace/devel/lib/python3/dist-packages/nlink_parser/msg/_LinktrackNodeframe4.py: /home/yu/catkin_workspace/src/nlink_parser/msg/LinktrackNodeframe4.msg
-/home/yu/catkin_workspace/devel/lib/python3/dist-packages/nlink_parser/msg/_LinktrackNodeframe4.py: /home/yu/catkin_workspace/src/nlink_parser/msg/LinktrackNode4Anchor.msg
 /home/yu/catkin_workspace/devel/lib/python3/dist-packages/nlink_parser/msg/_LinktrackNodeframe4.py: /home/yu/catkin_workspace/src/nlink_parser/msg/LinktrackNode4Tag.msg
+/home/yu/catkin_workspace/devel/lib/python3/dist-packages/nlink_parser/msg/_LinktrackNodeframe4.py: /home/yu/catkin_workspace/src/nlink_parser/msg/LinktrackNode4Anchor.msg
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/yu/catkin_workspace/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Generating Python from MSG nlink_parser/LinktrackNodeframe4"
 	cd /home/yu/catkin_workspace/build/nlink_parser && ../catkin_generated/env_cached.sh /usr/bin/python3 /opt/ros/noetic/share/genpy/cmake/../../../lib/genpy/genmsg_py.py /home/yu/catkin_workspace/src/nlink_parser/msg/LinktrackNodeframe4.msg -Inlink_parser:/home/yu/catkin_workspace/src/nlink_parser/msg -Istd_msgs:/opt/ros/noetic/share/std_msgs/cmake/../msg -p nlink_parser -o /home/yu/catkin_workspace/devel/lib/python3/dist-packages/nlink_parser/msg
 

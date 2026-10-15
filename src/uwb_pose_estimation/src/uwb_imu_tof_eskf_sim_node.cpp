@@ -1,5 +1,5 @@
 /**
- * @file uwb_imu_tof_eskf_node.cpp
+ * @file uwb_imu_tof_eskf_sim_node.cpp
  * @brief Simulation version of IMU + UWB + ToF ESKF for relative pose ^A_B T.
  *
  * State:

@@ -265,6 +265,10 @@ public:
 
         ROS_INFO("Simulation generator ready: duration=%.1f s, seed=%u", duration_sec_, random_seed_);
         ROS_INFO("Rates: IMU=100 Hz, truth=50 Hz, ToF=30 Hz, each UWB tag=50 Hz, total UWB=300 Hz");
+        ROS_INFO("IMU B gyro bias: [%.6f %.6f %.6f] rad/s",
+                 imu_b_gyro_bias_.x(), imu_b_gyro_bias_.y(), imu_b_gyro_bias_.z());
+        ROS_INFO("IMU B accelerometer bias: [%.6f %.6f %.6f] m/s^2",
+                 imu_b_acc_bias_.x(), imu_b_acc_bias_.y(), imu_b_acc_bias_.z());
         ROS_INFO("Geometry: 6 anchors (IDs 0-5), 6 tags (IDs 6-11)");
     }
 
@@ -281,6 +285,27 @@ private:
 
         pnh_.param<double>("sigma_gyro_density", sigma_gyro_density_, 0.002);
         pnh_.param<double>("sigma_acc_density", sigma_acc_density_, 0.020);
+
+        double imu_b_gyro_bias_x = 0.0;
+        double imu_b_gyro_bias_y = 0.0;
+        double imu_b_gyro_bias_z = 0.0;
+        pnh_.param<double>("imu_b_gyro_bias_x", imu_b_gyro_bias_x, 0.0);
+        pnh_.param<double>("imu_b_gyro_bias_y", imu_b_gyro_bias_y, 0.0);
+        pnh_.param<double>("imu_b_gyro_bias_z", imu_b_gyro_bias_z, 0.0);
+        imu_b_gyro_bias_ << imu_b_gyro_bias_x,
+                            imu_b_gyro_bias_y,
+                            imu_b_gyro_bias_z;
+
+        double imu_b_acc_bias_x = 0.0;
+        double imu_b_acc_bias_y = 0.0;
+        double imu_b_acc_bias_z = 0.0;
+        pnh_.param<double>("imu_b_acc_bias_x", imu_b_acc_bias_x, 0.0);
+        pnh_.param<double>("imu_b_acc_bias_y", imu_b_acc_bias_y, 0.0);
+        pnh_.param<double>("imu_b_acc_bias_z", imu_b_acc_bias_z, 0.0);
+        imu_b_acc_bias_ << imu_b_acc_bias_x,
+                           imu_b_acc_bias_y,
+                           imu_b_acc_bias_z;
+
         pnh_.param<double>("sigma_uwb", sigma_uwb_, 0.033);
         pnh_.param<double>("uwb_bias_min", uwb_bias_min_, 0.1);
         pnh_.param<double>("uwb_bias_max", uwb_bias_max_, 0.3);
@@ -403,9 +428,9 @@ private:
         const Eigen::Vector3d gravity_W(0.0, 0.0, -kGravity);
 
         const Eigen::Vector3d omega_A = bodyAngularVelocity(t, attitudeA) + gaussian3(gyro_sample_sigma);
-        const Eigen::Vector3d omega_B = bodyAngularVelocity(t, attitudeB) + gaussian3(gyro_sample_sigma);
+        const Eigen::Vector3d omega_B = bodyAngularVelocity(t, attitudeB) + gaussian3(gyro_sample_sigma) + imu_b_gyro_bias_;
         const Eigen::Vector3d f_A = truth.A.R.transpose() * (truth.A.a - gravity_W) + gaussian3(acc_sample_sigma);
-        const Eigen::Vector3d f_B = truth.B.R.transpose() * (truth.B.a - gravity_W) + gaussian3(acc_sample_sigma);
+        const Eigen::Vector3d f_B = truth.B.R.transpose() * (truth.B.a - gravity_W) + gaussian3(acc_sample_sigma) + imu_b_acc_bias_;
 
         sensor_msgs::Imu msg_a;
         sensor_msgs::Imu msg_b;
@@ -496,7 +521,7 @@ private:
             node.id = static_cast<std::uint8_t>(anchor_ids[i]);
             const double true_distance = (tag_A - anchor_positions[i]).norm();
             double uwb_bias_change = uniformBias();//测试使用
-            uwb_bias_change = 0.3;
+            uwb_bias_change = 0.0;//UWB偏置
             node.dis = static_cast<float>(true_distance + uwb_bias_change + gaussian(sigma_uwb_));
             node.fp_rssi = -80.0F;
             node.rx_rssi = -77.0F;
@@ -585,6 +610,8 @@ private:
 
     double sigma_gyro_density_ = 0.002;
     double sigma_acc_density_ = 0.020;
+    Eigen::Vector3d imu_b_gyro_bias_ = Eigen::Vector3d::Zero();
+    Eigen::Vector3d imu_b_acc_bias_ = Eigen::Vector3d::Zero();
     double sigma_uwb_ = 0.033;
     double uwb_bias_min_ = 0.1;
     double uwb_bias_max_ = 0.3;

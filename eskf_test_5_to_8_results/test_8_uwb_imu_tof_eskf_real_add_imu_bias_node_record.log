@@ -1,0 +1,6 @@
+[WARN] [1789522313.506946587]: /use_sim_time set to true and no clock published.  Still waiting for valid time...
+[INFO] [1789522311.497201615]: Subscribing to /uwb_imu_tof_eskf_real_node/bias/acc_A
+[INFO] [1789522311.498627461]: Subscribing to /uwb_imu_tof_eskf_real_node/bias/acc_B
+[INFO] [1789522311.499450702]: Subscribing to /uwb_imu_tof_eskf_real_node/bias/gyro_A
+[INFO] [1789522311.500297187]: Subscribing to /uwb_imu_tof_eskf_real_node/bias/gyro_B
+[INFO] [1789522314.485405841, 1785487862.751730304]: Recording to '/home/yu/catkin_workspace/eskf_test_5_to_8_results/test_8_uwb_imu_tof_eskf_real_add_imu_bias_node_bias.bag'.

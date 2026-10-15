@@ -1,0 +1,54 @@
+[INFO] [1789522397.001911920]: IMU Mahony node started.
+[INFO] [1789522397.003395189]: Subscribing: /mynteye/imu/data_raw
+[INFO] [1789522397.003408033]: Publishing : /imu/rpy
+[INFO] [1789522397.015319185]: GroundDistanceNode started.
+[INFO] [1789522397.016263835]:   Subscribe ToF : /nlink_tofsensem_frame0
+[INFO] [1789522397.016269716]:   Subscribe RPY : /imu/rpy
+[INFO] [1789522397.016273844]:   Publish Ground : /ground_distance (geometry_msgs::PointStamped)
+[INFO] [1789522397.016277290]:   Middle pixel index : 7
+[INFO] [1789522397.016280326]:   Publish rate : 50 Hz
+[INFO] [1789522397.016283322]:   FPS report interval : 5 sec
+[INFO] [1789522401.858339038, 1785487862.751502688]: === [FPS] /ground_distance publish rate: 0.0 Hz (last 5 sec, 0 msgs) ===
+[INFO] [1789522401.858451726, 1785487862.751502688]: === [FPS] /ground_distance publish rate: 0.0 Hz (last 5 sec, 0 msgs) ===
+[INFO] [1789522406.867201015, 1785487867.760688736]: === [FPS] /ground_distance publish rate: 49.6 Hz (last 5 sec, 248 msgs) ===
+[INFO] [1789522411.861106559, 1785487872.754627841]: === [FPS] /ground_distance publish rate: 50.0 Hz (last 5 sec, 250 msgs) ===
+[INFO] [1789522416.860019625, 1785487877.753940798]: === [FPS] /ground_distance publish rate: 50.0 Hz (last 5 sec, 250 msgs) ===
+[INFO] [1789522421.859455149, 1785487882.753636555]: === [FPS] /ground_distance publish rate: 50.0 Hz (last 5 sec, 250 msgs) ===
+[INFO] [1789522426.861001096, 1785487887.755116049]: === [FPS] /ground_distance publish rate: 50.0 Hz (last 5 sec, 250 msgs) ===
+[INFO] [1789522431.860344499, 1785487892.753955307]: === [FPS] /ground_distance publish rate: 50.0 Hz (last 5 sec, 250 msgs) ===
+... logging to /home/yu/catkin_workspace/eskf_test_5_to_8_results/ros_home/log/96e0cbcc-b16e-11f1-9518-f0a6549062eb/roslaunch-yu-Legion-R9000P-ARH7H-9096.log
+Checking log directory for disk usage. This may take a while.
+Press Ctrl-C to interrupt
+Done checking log file disk usage. Usage is <1GB.
+]2;/home/yu/catkin_workspace/src/imu_mahony/launch/ground_distance.launch
+[1mstarted roslaunch server http://localhost:40671/[0m
+
+SUMMARY
+========
+
+PARAMETERS
+ * /ground_distance_node/ground_topic: /ground_distance
+ * /ground_distance_node/middle_pixel_index: 7
+ * /ground_distance_node/rpy_topic: /imu/rpy
+ * /ground_distance_node/tof_topic: /nlink_tofsensem_...
+ * /imu_mahony_node/imu_topic: /mynteye/imu/data...
+ * /imu_mahony_node/ki: 0.01
+ * /imu_mahony_node/kp: 1.0
+ * /imu_mahony_node/rpy_topic: /imu/rpy
+ * /rosdistro: noetic
+ * /rosversion: 1.17.4
+
+NODES
+  /
+    ground_distance_node (imu_mahony/ground_distance_node)
+    imu_mahony_node (imu_mahony/imu_node)
+
+[1mROS_MASTER_URI=http://localhost:11362[0m
+]2;/home/yu/catkin_workspace/src/imu_mahony/launch/ground_distance.launch http://localhost:11362
+[1mprocess[imu_mahony_node-1]: started with pid [9128][0m
+[1mprocess[ground_distance_node-2]: started with pid [9129][0m
+[ground_distance_node-2] killing on exit
+[imu_mahony_node-1] killing on exit
+shutting down processing monitor...
+... shutting down processing monitor complete
+[1mdone[0m

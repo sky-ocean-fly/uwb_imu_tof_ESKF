@@ -10,6 +10,14 @@ random_seed: 20260714
 sigma_gyro_density: 0.002   # rad/s/sqrt(Hz)
 sigma_acc_density: 0.020    # m/s^2/sqrt(Hz)
 
+# Fixed IMU B biases expressed in the IMU B body frame.
+imu_b_gyro_bias_x: 0.020    # rad/s
+imu_b_gyro_bias_y: -0.015   # rad/s
+imu_b_gyro_bias_z: 0.010    # rad/s
+imu_b_acc_bias_x: 0.20      # m/s^2
+imu_b_acc_bias_y: -0.10     # m/s^2
+imu_b_acc_bias_z: 0.15      # m/s^2
+
 # Per-measurement discrete standard deviations.
 sigma_uwb: 0.033            # 随机噪声标准差，m
 uwb_bias: 0.3              # 固定正偏置，m

@@ -1,0 +1,9 @@
+bag,node,samples,duration_s,position_mean_m,position_rmse_m,position_max_m,rotation_rmse_deg,position_3sigma_all_axes_fraction
+test_5.bag,uwb_imu_tof_eskf_real_add_imu_bias_node,2045,40.880,0.1357,0.1441,0.2953,7.353,0.1511
+test_5.bag,uwb_imu_tof_eskf_real_node,2046,40.884,0.1238,0.1325,0.2934,4.150,0.1916
+test_6.bag,uwb_imu_tof_eskf_real_add_imu_bias_node,2769,55.366,0.1225,0.1344,0.3117,8.643,0.2622
+test_6.bag,uwb_imu_tof_eskf_real_node,2770,55.381,0.1016,0.1132,0.2888,3.593,0.5477
+test_7.bag,uwb_imu_tof_eskf_real_add_imu_bias_node,1972,39.424,0.1209,0.1279,0.2832,9.546,0.2718
+test_7.bag,uwb_imu_tof_eskf_real_node,1972,39.421,0.1107,0.1186,0.2876,5.550,0.3017
+test_8.bag,uwb_imu_tof_eskf_real_add_imu_bias_node,1542,30.824,0.1102,0.1250,0.3971,14.399,0.2750
+test_8.bag,uwb_imu_tof_eskf_real_node,1542,30.823,0.0785,0.0887,0.3157,5.920,0.6180

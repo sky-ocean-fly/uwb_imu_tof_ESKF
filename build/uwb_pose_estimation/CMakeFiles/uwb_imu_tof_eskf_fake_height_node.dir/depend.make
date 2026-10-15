@@ -11,6 +11,7 @@ uwb_pose_estimation/CMakeFiles/uwb_imu_tof_eskf_fake_height_node.dir/src/uwb_imu
 uwb_pose_estimation/CMakeFiles/uwb_imu_tof_eskf_fake_height_node.dir/src/uwb_imu_tof_eskf_fake_height.cpp.o: /opt/ros/noetic/include/geometry_msgs/PoseStamped.h
 uwb_pose_estimation/CMakeFiles/uwb_imu_tof_eskf_fake_height_node.dir/src/uwb_imu_tof_eskf_fake_height.cpp.o: /opt/ros/noetic/include/geometry_msgs/Quaternion.h
 uwb_pose_estimation/CMakeFiles/uwb_imu_tof_eskf_fake_height_node.dir/src/uwb_imu_tof_eskf_fake_height.cpp.o: /opt/ros/noetic/include/geometry_msgs/Vector3.h
+uwb_pose_estimation/CMakeFiles/uwb_imu_tof_eskf_fake_height_node.dir/src/uwb_imu_tof_eskf_fake_height.cpp.o: /opt/ros/noetic/include/geometry_msgs/Vector3Stamped.h
 uwb_pose_estimation/CMakeFiles/uwb_imu_tof_eskf_fake_height_node.dir/src/uwb_imu_tof_eskf_fake_height.cpp.o: /opt/ros/noetic/include/message_filters/connection.h
 uwb_pose_estimation/CMakeFiles/uwb_imu_tof_eskf_fake_height_node.dir/src/uwb_imu_tof_eskf_fake_height.cpp.o: /opt/ros/noetic/include/message_filters/macros.h
 uwb_pose_estimation/CMakeFiles/uwb_imu_tof_eskf_fake_height_node.dir/src/uwb_imu_tof_eskf_fake_height.cpp.o: /opt/ros/noetic/include/message_filters/null_types.h

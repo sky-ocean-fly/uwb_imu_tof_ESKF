@@ -109,6 +109,18 @@ if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/uwb_bias_learning" TYPE PROGRAM FILES "/home/yu/catkin_workspace/build/uwb_bias_learning/catkin_generated/installspace/estimate_range_bias_from_mocap.py")
+endif()
+
+if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/uwb_bias_learning" TYPE PROGRAM FILES "/home/yu/catkin_workspace/build/uwb_bias_learning/catkin_generated/installspace/analyze_multitag_uwb_bias_bag.py")
+endif()
+
+if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/uwb_bias_learning" TYPE PROGRAM FILES "/home/yu/catkin_workspace/build/uwb_bias_learning/catkin_generated/installspace/plot_multitag_uwb_bias_time.py")
+endif()
+
+if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/uwb_bias_learning" TYPE PROGRAM FILES "/home/yu/catkin_workspace/src/uwb_bias_learning/scripts/record_session.sh")
 endif()
 

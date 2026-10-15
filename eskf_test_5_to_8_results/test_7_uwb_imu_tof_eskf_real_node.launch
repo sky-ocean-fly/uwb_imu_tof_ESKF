@@ -1,0 +1,38 @@
+<launch>
+  <!-- 按你的包名修改 default，例如 uwb_pose_estimation -->
+  <arg name="pkg" default="uwb_pose_estimation" />
+  <arg name="eskf_node_type" default="uwb_imu_tof_eskf_real_node" /> <!--uwb_imu_tof_eskf_real_add_imu_bias_node--> <!--uwb_imu_tof_eskf_real_node-->
+  <arg name="config_file" default="$(find uwb_pose_estimation)/config/uwb_imu_tof_eskf.yaml" />
+  <arg name="use_fake_imu_a" default="true" />
+  <arg name="fake_imu_a_topic" default="/imu_A/data_raw" />
+  <arg name="fake_imu_a_frame_id" default="imu_A" />
+  <arg name="fake_imu_a_rate_hz" default="500.0" />
+  <arg name="fake_imu_a_gravity_z" default="9.80665" />
+
+  <node if="$(arg use_fake_imu_a)" pkg="$(arg pkg)" type="fake_imu_node" name="fake_imu_a_node" output="screen">
+    <param name="topic" value="$(arg fake_imu_a_topic)" />
+    <param name="frame_id" value="$(arg fake_imu_a_frame_id)" />
+    <param name="rate_hz" value="$(arg fake_imu_a_rate_hz)" />
+    <param name="angular_velocity_x" value="0.0" />
+    <param name="angular_velocity_y" value="0.0" />
+    <param name="angular_velocity_z" value="0.0" />
+    <param name="linear_acceleration_x" value="0.0" />
+    <param name="linear_acceleration_y" value="0.0" />
+    <param name="linear_acceleration_z" value="$(arg fake_imu_a_gravity_z)" />
+  </node>
+
+  <node pkg="$(arg pkg)" type="$(arg eskf_node_type)" name="uwb_imu_tof_eskf_real_node" output="screen">
+    <rosparam command="load" file="$(arg config_file)" />
+    <param name="publish_rate_hz" value="50.0"/>
+  </node>
+
+  <!-- 协方差模式下，logger直接从PoseWithCovarianceStamped读取估计和3sigma信息。 -->
+  <node pkg="$(arg pkg)" type="pose_compare_logger" name="pose_compare_logger_eskf" output="screen">
+    <param name="est_topic" value="/eskf_estimated_pose" />
+    <param name="est_cov_topic" value="/eskf_estimated_pose_with_covariance" />
+    <param name="gt_topic" value="/eskf_mocap_truth_pose" />
+    <param name="csv_path" value="/home/yu/catkin_workspace/eskf_test_5_to_8_results/test_7_uwb_imu_tof_eskf_real_node.csv" />
+    <param name="queue_size" value="100" />
+    <param name="sync_slop" value="0.05" />
+  </node>
+</launch>

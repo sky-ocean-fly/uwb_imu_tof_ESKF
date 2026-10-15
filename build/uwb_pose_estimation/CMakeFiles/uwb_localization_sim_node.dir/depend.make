@@ -850,6 +850,7 @@ uwb_pose_estimation/CMakeFiles/uwb_localization_sim_node.dir/src/utils.cpp.o: /u
 
 uwb_pose_estimation/CMakeFiles/uwb_localization_sim_node.dir/src/uwb_localization_sim_node.cpp.o: /home/yu/catkin_workspace/devel/include/nlink_parser/LinktrackNode2.h
 uwb_pose_estimation/CMakeFiles/uwb_localization_sim_node.dir/src/uwb_localization_sim_node.cpp.o: /home/yu/catkin_workspace/devel/include/nlink_parser/LinktrackNodeframe2.h
+uwb_pose_estimation/CMakeFiles/uwb_localization_sim_node.dir/src/uwb_localization_sim_node.cpp.o: /home/yu/catkin_workspace/src/imu_mahony/include/imu_mahony/imu_mahony.h
 uwb_pose_estimation/CMakeFiles/uwb_localization_sim_node.dir/src/uwb_localization_sim_node.cpp.o: /home/yu/catkin_workspace/src/uwb_pose_estimation/include/uwb_pose_estimation/config_loader.h
 uwb_pose_estimation/CMakeFiles/uwb_localization_sim_node.dir/src/uwb_localization_sim_node.cpp.o: /home/yu/catkin_workspace/src/uwb_pose_estimation/include/uwb_pose_estimation/global_declare.h
 uwb_pose_estimation/CMakeFiles/uwb_localization_sim_node.dir/src/uwb_localization_sim_node.cpp.o: /home/yu/catkin_workspace/src/uwb_pose_estimation/include/uwb_pose_estimation/node_localization.h

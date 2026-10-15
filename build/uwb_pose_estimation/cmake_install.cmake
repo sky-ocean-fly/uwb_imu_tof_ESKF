@@ -113,21 +113,41 @@ if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  if(EXISTS "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation/uwb_imu_tof_eskf_node" AND
-     NOT IS_SYMLINK "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation/uwb_imu_tof_eskf_node")
+  if(EXISTS "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation/uwb_imu_tof_eskf_real_node" AND
+     NOT IS_SYMLINK "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation/uwb_imu_tof_eskf_real_node")
     file(RPATH_CHECK
-         FILE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation/uwb_imu_tof_eskf_node"
+         FILE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation/uwb_imu_tof_eskf_real_node"
          RPATH "")
   endif()
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation" TYPE EXECUTABLE FILES "/home/yu/catkin_workspace/devel/lib/uwb_pose_estimation/uwb_imu_tof_eskf_node")
-  if(EXISTS "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation/uwb_imu_tof_eskf_node" AND
-     NOT IS_SYMLINK "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation/uwb_imu_tof_eskf_node")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation" TYPE EXECUTABLE FILES "/home/yu/catkin_workspace/devel/lib/uwb_pose_estimation/uwb_imu_tof_eskf_real_node")
+  if(EXISTS "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation/uwb_imu_tof_eskf_real_node" AND
+     NOT IS_SYMLINK "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation/uwb_imu_tof_eskf_real_node")
     file(RPATH_CHANGE
-         FILE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation/uwb_imu_tof_eskf_node"
+         FILE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation/uwb_imu_tof_eskf_real_node"
          OLD_RPATH "/opt/ros/noetic/lib:"
          NEW_RPATH "")
     if(CMAKE_INSTALL_DO_STRIP)
-      execute_process(COMMAND "/usr/bin/strip" "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation/uwb_imu_tof_eskf_node")
+      execute_process(COMMAND "/usr/bin/strip" "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation/uwb_imu_tof_eskf_real_node")
+    endif()
+  endif()
+endif()
+
+if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
+  if(EXISTS "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation/uwb_imu_tof_eskf_real_add_imu_bias_node" AND
+     NOT IS_SYMLINK "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation/uwb_imu_tof_eskf_real_add_imu_bias_node")
+    file(RPATH_CHECK
+         FILE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation/uwb_imu_tof_eskf_real_add_imu_bias_node"
+         RPATH "")
+  endif()
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation" TYPE EXECUTABLE FILES "/home/yu/catkin_workspace/devel/lib/uwb_pose_estimation/uwb_imu_tof_eskf_real_add_imu_bias_node")
+  if(EXISTS "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation/uwb_imu_tof_eskf_real_add_imu_bias_node" AND
+     NOT IS_SYMLINK "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation/uwb_imu_tof_eskf_real_add_imu_bias_node")
+    file(RPATH_CHANGE
+         FILE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation/uwb_imu_tof_eskf_real_add_imu_bias_node"
+         OLD_RPATH "/opt/ros/noetic/lib:"
+         NEW_RPATH "")
+    if(CMAKE_INSTALL_DO_STRIP)
+      execute_process(COMMAND "/usr/bin/strip" "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation/uwb_imu_tof_eskf_real_add_imu_bias_node")
     endif()
   endif()
 endif()
@@ -168,6 +188,46 @@ if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_
          NEW_RPATH "")
     if(CMAKE_INSTALL_DO_STRIP)
       execute_process(COMMAND "/usr/bin/strip" "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation/sim_data_generator_node")
+    endif()
+  endif()
+endif()
+
+if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
+  if(EXISTS "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation/uwb_imu_tof_eskf_fake_height_node" AND
+     NOT IS_SYMLINK "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation/uwb_imu_tof_eskf_fake_height_node")
+    file(RPATH_CHECK
+         FILE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation/uwb_imu_tof_eskf_fake_height_node"
+         RPATH "")
+  endif()
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation" TYPE EXECUTABLE FILES "/home/yu/catkin_workspace/devel/lib/uwb_pose_estimation/uwb_imu_tof_eskf_fake_height_node")
+  if(EXISTS "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation/uwb_imu_tof_eskf_fake_height_node" AND
+     NOT IS_SYMLINK "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation/uwb_imu_tof_eskf_fake_height_node")
+    file(RPATH_CHANGE
+         FILE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation/uwb_imu_tof_eskf_fake_height_node"
+         OLD_RPATH "/opt/ros/noetic/lib:"
+         NEW_RPATH "")
+    if(CMAKE_INSTALL_DO_STRIP)
+      execute_process(COMMAND "/usr/bin/strip" "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation/uwb_imu_tof_eskf_fake_height_node")
+    endif()
+  endif()
+endif()
+
+if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
+  if(EXISTS "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation/uwb_imu_tof_eskf_fake_height_add_imu_bias_node" AND
+     NOT IS_SYMLINK "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation/uwb_imu_tof_eskf_fake_height_add_imu_bias_node")
+    file(RPATH_CHECK
+         FILE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation/uwb_imu_tof_eskf_fake_height_add_imu_bias_node"
+         RPATH "")
+  endif()
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation" TYPE EXECUTABLE FILES "/home/yu/catkin_workspace/devel/lib/uwb_pose_estimation/uwb_imu_tof_eskf_fake_height_add_imu_bias_node")
+  if(EXISTS "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation/uwb_imu_tof_eskf_fake_height_add_imu_bias_node" AND
+     NOT IS_SYMLINK "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation/uwb_imu_tof_eskf_fake_height_add_imu_bias_node")
+    file(RPATH_CHANGE
+         FILE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation/uwb_imu_tof_eskf_fake_height_add_imu_bias_node"
+         OLD_RPATH "/opt/ros/noetic/lib:"
+         NEW_RPATH "")
+    if(CMAKE_INSTALL_DO_STRIP)
+      execute_process(COMMAND "/usr/bin/strip" "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/uwb_pose_estimation/uwb_imu_tof_eskf_fake_height_add_imu_bias_node")
     endif()
   endif()
 endif()

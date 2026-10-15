@@ -13,7 +13,7 @@
   <include file="$(find uwb_pose_estimation)/launch/uwb_pose_estimation.launch" />
 
   <!-- 5. UWB + IMU + ToF ESKF 融合节点 -->
-  <include file="$(find uwb_pose_estimation)/launch/uwb_imu_tof_eskf.launch">
+  <include file="$(find uwb_pose_estimation)/launch/uwb_imu_tof_eskf_real.launch">
     <arg name="use_fake_imu_a" value="true" />
   </include>
 

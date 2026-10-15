@@ -1,16 +1,22 @@
 /**
- * @file uwb_imu_tof_eskf_node.cpp
- * @brief IMU + UWB + ToF ESKF for relative pose ^A_B T, with mocap truth publishing.
+ * @file uwb_imu_tof_eskf_fake_height_add_imu_bias.cpp
+ * @brief Simulation version of IMU + UWB + ToF ESKF for relative pose ^A_B T.
  *
  * State:
- *   R = R_A_B, v = v_A_AB, p = p_A_AB
+ *   R = R_A_B, v = v_A_AB, p = p_A_AB, bg_A, bg_B, ba_A, ba_B
  * Error state:
- *   xi = [delta_theta, delta_v, delta_p]^T, left perturbation R = Exp(delta_theta^) R_hat
+ *   xi = [dtheta, dv, dp, dbg_A, dbg_B, dba_A, dba_B]^T (21D)
+ *   Left perturbation: R_true = Exp(dtheta^) R_hat.
+ *   Biases use additive errors in their own body frames A / B.
  *
  * Propagation:
  *   R_{k+1} = Exp(-omega_A dt) R_k Exp(omega_B dt)
  *   v_dot   = -omega_A^ v + R f_B - f_A
  *   p_dot   = -omega_A^ p + v
+ *   All omega/f above are raw IMU measurements minus estimated biases.
+ *   Bias nominal values stay constant during propagation; covariance uses random walks.
+ *   IMU axes/origins must already match A/B, or upstream extrinsic/lever-arm
+ *   compensation is required. Accelerometer inputs are specific forces.
  *
  * Measurement:
  *   UWB: rho_ij = ||p + R b_j - a_i||
@@ -27,6 +33,7 @@
 #include <nlink_parser/LinktrackNodeframe2.h>
 #include <geometry_msgs/PointStamped.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/Vector3Stamped.h>
 
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
@@ -44,14 +51,23 @@
 #include <algorithm>
 #include <clocale>
 #include <set>
+#include <stdexcept>
+
+#include "simulation_geometry.h"
 
 namespace
 {
 
-using Matrix9d = Eigen::Matrix<double, 9, 9>;
-using Matrix9x12d = Eigen::Matrix<double, 9, 12>;
-using Matrix12d = Eigen::Matrix<double, 12, 12>;
-using Vector9d = Eigen::Matrix<double, 9, 1>;
+constexpr int kErrorSize = 21;
+constexpr int kNoiseSize = 24;
+constexpr int kBgA = 9;
+constexpr int kBgB = 12;
+constexpr int kBaA = 15;
+constexpr int kBaB = 18;
+using Matrix21d = Eigen::Matrix<double, kErrorSize, kErrorSize>;
+using Matrix21x24d = Eigen::Matrix<double, kErrorSize, kNoiseSize>;
+using Matrix24d = Eigen::Matrix<double, kNoiseSize, kNoiseSize>;
+using Vector21d = Eigen::Matrix<double, kErrorSize, 1>;
 
 Eigen::Matrix3d skew(const Eigen::Vector3d &v)
 {
@@ -76,6 +92,43 @@ Eigen::Matrix3d expSO3(const Eigen::Vector3d &phi)
     const double A = std::sin(theta) / theta;
     const double B = (1.0 - std::cos(theta)) / (theta * theta);
     return Eigen::Matrix3d::Identity() + A * W + B * W2;
+}
+
+// Evaluate every block at the same pre-propagation nominal state.
+// Noise order: [ng_A, ng_B, na_A, na_B, wbg_A, wbg_B, wba_A, wba_B].
+void buildErrorDynamics(const Eigen::Matrix3d &R,
+                        const Eigen::Vector3d &v,
+                        const Eigen::Vector3d &p,
+                        const Eigen::Vector3d &omega_A,
+                        const Eigen::Vector3d &f_B,
+                        Matrix21d &F, Matrix21x24d &G)
+{
+    const Eigen::Matrix3d I = Eigen::Matrix3d::Identity();
+    const Eigen::Matrix3d Omega_A = skew(omega_A);
+    F.setZero();
+    F.block<3, 3>(0, 0) = -Omega_A;
+    F.block<3, 3>(0, kBgA) = I;
+    F.block<3, 3>(0, kBgB) = -R;
+    F.block<3, 3>(3, 0) = -skew(R * f_B);
+    F.block<3, 3>(3, 3) = -Omega_A;
+    F.block<3, 3>(3, kBgA) = -skew(v);
+    F.block<3, 3>(3, kBaA) = I;
+    F.block<3, 3>(3, kBaB) = -R;
+    F.block<3, 3>(6, 3) = I;
+    F.block<3, 3>(6, 6) = -Omega_A;
+    F.block<3, 3>(6, kBgA) = -skew(p);
+
+    G.setZero();
+    G.block<3, 3>(0, 0) = I;
+    G.block<3, 3>(0, 3) = -R;
+    G.block<3, 3>(3, 0) = -skew(v);
+    G.block<3, 3>(3, 6) = I;
+    G.block<3, 3>(3, 9) = -R;
+    G.block<3, 3>(6, 0) = -skew(p);
+    G.block<3, 3>(kBgA, 12) = I;
+    G.block<3, 3>(kBgB, 15) = I;
+    G.block<3, 3>(kBaA, 18) = I;
+    G.block<3, 3>(kBaB, 21) = I;
 }
 
 Eigen::Matrix3d eulerZYXDegToRot(double yaw_deg, double pitch_deg, double roll_deg)
@@ -176,10 +229,15 @@ public:
     {
         loadParams();
         loadGeometry();
+        initializeBiases();
         resetCovariance();
 
         pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(eskf_pose_topic_, 10);
         mocap_truth_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(mocap_truth_topic_, 10);
+        bias_bg_A_pub_ = pnh_.advertise<geometry_msgs::Vector3Stamped>("bias/gyro_A", 10);
+        bias_bg_B_pub_ = pnh_.advertise<geometry_msgs::Vector3Stamped>("bias/gyro_B", 10);
+        bias_ba_A_pub_ = pnh_.advertise<geometry_msgs::Vector3Stamped>("bias/acc_A", 10);
+        bias_ba_B_pub_ = pnh_.advertise<geometry_msgs::Vector3Stamped>("bias/acc_B", 10);
 
         publish_timer_ = nh_.createTimer(
             ros::Duration(1.0 / publish_rate_hz_),
@@ -201,7 +259,7 @@ public:
 
         imu_a_sub_.subscribe(nh_, imu_a_topic_, imu_queue_size_);
         imu_b_sub_.subscribe(nh_, imu_b_topic_, imu_queue_size_);
-        //message_filters::Synchronizer<ImuSyncPolicy>，近似时间同步 
+        //message_filters::Synchronizer<ImuSyncPolicy>，近似时间同步
         //message_filters::sync_policies::ApproximateTime<sensor_msgs::Imu, sensor_msgs::Imu>
         imu_sync_.reset(new ImuSynchronizer(ImuSyncPolicy(imu_queue_size_), imu_a_sub_, imu_b_sub_));
         imu_sync_->setMaxIntervalDuration(ros::Duration(imu_sync_slop_));
@@ -214,6 +272,10 @@ public:
         ROS_INFO("  IMU A话题: %s", imu_a_topic_.c_str());
         ROS_INFO("  IMU B话题: %s", imu_b_topic_.c_str());
         ROS_INFO("  UWB假高度: %s", use_uwb_fake_height_ ? "启用" : "关闭");
+        ROS_INFO("  IMU偏置在线估计: %s；误差状态维度: %d",
+                 estimate_imu_bias_ ? "启用" : "关闭（使用固定初值补偿）", kErrorSize);
+        if (sim_inject_imu_bias_)
+            ROS_WARN("仿真常值偏置注入已开启：仅在本估计器内部叠加，初始偏置估计仍由init_b*参数决定。");
         ROS_INFO("  初始化: %s", init_from_pose_topic_ ? init_pose_topic_.c_str() : (init_from_mocap_ ? "mocap" : "params"));
     }
 
@@ -228,17 +290,20 @@ private:
         pnh_.param<std::string>("tof_topic", tof_topic_, "/ground_distance");
         pnh_.param<std::string>("imu_a_topic", imu_a_topic_, "/imu_A/data_raw");
         pnh_.param<std::string>("imu_b_topic", imu_b_topic_, "/imu_B/data_raw");
-        pnh_.param<std::string>("mocap_topic", mocap_topic_, "/vrpn_client/UWB_rocket/pose");
+        pnh_.param<std::string>("mocap_topic", mocap_topic_, "/sim/relative_truth_pose");
         pnh_.param<std::string>("eskf_pose_topic", eskf_pose_topic_, "/eskf_estimated_pose");
         pnh_.param<std::string>("mocap_truth_topic", mocap_truth_topic_, "/eskf_mocap_truth_pose");
         pnh_.param<std::string>("init_pose_topic", init_pose_topic_, "/estimated_pose");
         pnh_.param<std::string>("frame_id", frame_id_, "anchor_frame_A");
+        pnh_.param<std::string>("body_frame_id_B", body_frame_id_B_, "body_frame_B");
         pnh_.param<double>("publish_rate_hz", publish_rate_hz_, 50.0);//发布估计的和真实的相对位姿的50Hz定时器
 
         pnh_.param<bool>("init_from_pose_topic", init_from_pose_topic_, true);
         pnh_.param<bool>("init_from_mocap", init_from_mocap_, false);
         pnh_.param<bool>("tof_vertical_mode", tof_vertical_mode_, true);
-        pnh_.param<bool>("use_uwb_fake_height", use_uwb_fake_height_, false);
+        pnh_.param<bool>("use_uwb_fake_height", use_uwb_fake_height_, false);//“假高度”
+        pnh_.param<bool>("estimate_imu_bias", estimate_imu_bias_, true);
+        pnh_.param<bool>("sim_inject_imu_bias", sim_inject_imu_bias_, false);
 
         pnh_.param<int>("imu_queue_size", imu_queue_size_, 100);
         pnh_.param<double>("imu_sync_slop", imu_sync_slop_, 0.01);
@@ -248,6 +313,12 @@ private:
         pnh_.param<double>("sigma_gyro_B", sigma_gyro_B_, 0.02);
         pnh_.param<double>("sigma_acc_A", sigma_acc_A_, 0.20);
         pnh_.param<double>("sigma_acc_B", sigma_acc_B_, 0.20);
+        // Continuous-time white-noise densities above; NOT per-sample std.
+        // Bias random walk strengths: rad/s/sqrt(s), m/s^2/sqrt(s).
+        pnh_.param<double>("sigma_bg_A", sigma_bg_A_, 1e-4);
+        pnh_.param<double>("sigma_bg_B", sigma_bg_B_, 1e-4);
+        pnh_.param<double>("sigma_ba_A", sigma_ba_A_, 1e-3);
+        pnh_.param<double>("sigma_ba_B", sigma_ba_B_, 1e-3);
         pnh_.param<double>("sigma_uwb", sigma_uwb_, 0.05);
         pnh_.param<double>("sigma_tof", sigma_tof_, 0.03);
 
@@ -266,34 +337,70 @@ private:
         pnh_.param<double>("init_sigma_angle", init_sigma_angle_, 0.30);
         pnh_.param<double>("init_sigma_velocity", init_sigma_velocity_, 0.50);
         pnh_.param<double>("init_sigma_position", init_sigma_position_, 0.50);
+        // Prior standard deviations, not bias means or random-walk strengths.
+        pnh_.param<double>("init_sigma_bg_A", init_sigma_bg_A_, 0.02);
+        pnh_.param<double>("init_sigma_bg_B", init_sigma_bg_B_, 0.02);
+        pnh_.param<double>("init_sigma_ba_A", init_sigma_ba_A_, 0.20);
+        pnh_.param<double>("init_sigma_ba_B", init_sigma_ba_B_, 0.20);
+        init_bg_A_ = loadVector3Param("init_bg_A");
+        init_bg_B_ = loadVector3Param("init_bg_B");
+        init_ba_A_ = loadVector3Param("init_ba_A");
+        init_ba_B_ = loadVector3Param("init_ba_B");
+
+        // Optional deterministic input corruption for simulation ablations only.
+        // These values never initialize the estimator and are never measurements.
+        sim_bg_A_ = loadVector3Param("sim_bg_A");
+        sim_bg_B_ = loadVector3Param("sim_bg_B");
+        sim_ba_A_ = loadVector3Param("sim_ba_A");
+        sim_ba_B_ = loadVector3Param("sim_ba_B");
+
+        const double nonnegative[] = {
+            sigma_gyro_A_, sigma_gyro_B_, sigma_acc_A_, sigma_acc_B_,
+            sigma_bg_A_, sigma_bg_B_, sigma_ba_A_, sigma_ba_B_,
+            init_sigma_angle_, init_sigma_velocity_, init_sigma_position_,
+            init_sigma_bg_A_, init_sigma_bg_B_, init_sigma_ba_A_, init_sigma_ba_B_,
+            imu_sync_slop_};
+        for (double value : nonnegative)
+            if (!std::isfinite(value) || value < 0.0)
+                throw std::invalid_argument("IMU噪声、初始标准差和同步容差必须为非负有限数。");
+        const double positive[] = {sigma_uwb_, sigma_tof_, publish_rate_hz_,
+                                   max_imu_dt_, uwb_fake_height_min_information_};
+        for (double value : positive)
+            if (!std::isfinite(value) || value <= 0.0)
+                throw std::invalid_argument("UWB/ToF标准差、发布频率、最大dt和假高度信息阈值必须为正有限数。");
+        if (imu_queue_size_ <= 0)
+            throw std::invalid_argument("imu_queue_size必须为正整数。");
+    }
+
+    Eigen::Vector3d loadVector3Param(const std::string &name)
+    {
+        if (!pnh_.hasParam(name))
+            return Eigen::Vector3d::Zero();
+        std::vector<double> values;
+        if (!pnh_.getParam(name, values) || values.size() != 3)
+            throw std::invalid_argument(name + "必须为[x, y, z]三个数值。");
+        const Eigen::Vector3d value(values[0], values[1], values[2]);
+        if (!value.allFinite())
+            throw std::invalid_argument(name + "包含NaN/Inf。");
+        return value;
+    }
+
+    void initializeBiases()
+    {
+        bg_A_ = init_bg_A_;
+        bg_B_ = init_bg_B_;
+        ba_A_ = init_ba_A_;
+        ba_B_ = init_ba_B_;
     }
 
     void loadGeometry()
     {
-        tag_ids_ = {5, 6, 7, 8};
-        anchor_ids_ = {0, 1, 2, 3, 4, 9};
-
-        // b_j: UWB标签在无人机B系下的位置，来自现有uwb_localization_node.cpp中的标定量。
-        tag_positions_B_ = {
-            Eigen::Vector3d(-0.017, 0.494, 0.037),
-            Eigen::Vector3d(-0.457, -0.006, 0.046),
-            Eigen::Vector3d(-0.023, -0.506, 0.058),
-            Eigen::Vector3d(0.472, 0.010, 0.046)};
-
-        // a_i: UWB基站在无人车/平台A系下的位置，来自现有uwb_localization_node.cpp中的标定量。
-        anchor_positions_A_ = {
-            Eigen::Vector3d(-0.677, -3.480, 2.098),
-            Eigen::Vector3d(-2.863, 1.767, 0.913),
-            Eigen::Vector3d(-2.880, -2.275, 0.756),
-            Eigen::Vector3d(1.787, -2.296, 0.922),
-            Eigen::Vector3d(1.795, 1.748, 1.038),
-            Eigen::Vector3d(-0.736, 3.512, 1.813)};
-
-        // c_T: ToF在B系下的位置，来自现有uwb_localization_node.cpp中的标定量。
-        tof_position_B_ = Eigen::Vector3d(0.186, 0.680, -0.049);
-
-        // s_T: ToF光束方向。若订阅/ground_distance的point.y垂直高度，默认不使用该方向。
-        tof_ray_B_ = Eigen::Vector3d(0.0, 0.0, -1.0);
+        tag_ids_ = uwb_pose_estimation::simulation_geometry::tagIds();
+        anchor_ids_ = uwb_pose_estimation::simulation_geometry::anchorIds();
+        tag_positions_B_ = uwb_pose_estimation::simulation_geometry::tagPositionsB();
+        anchor_positions_A_ = uwb_pose_estimation::simulation_geometry::anchorPositionsA();
+        tof_position_B_ = uwb_pose_estimation::simulation_geometry::tofPositionB();
+        tof_ray_B_ = uwb_pose_estimation::simulation_geometry::tofRayB();
     }
 
     void resetCovariance()
@@ -302,6 +409,13 @@ private:
         P_.block<3, 3>(0, 0) = init_sigma_angle_ * init_sigma_angle_ * Eigen::Matrix3d::Identity();
         P_.block<3, 3>(3, 3) = init_sigma_velocity_ * init_sigma_velocity_ * Eigen::Matrix3d::Identity();
         P_.block<3, 3>(6, 6) = init_sigma_position_ * init_sigma_position_ * Eigen::Matrix3d::Identity();
+        if (estimate_imu_bias_)
+        {
+            P_.block<3, 3>(kBgA, kBgA) = init_sigma_bg_A_ * init_sigma_bg_A_ * Eigen::Matrix3d::Identity();
+            P_.block<3, 3>(kBgB, kBgB) = init_sigma_bg_B_ * init_sigma_bg_B_ * Eigen::Matrix3d::Identity();
+            P_.block<3, 3>(kBaA, kBaA) = init_sigma_ba_A_ * init_sigma_ba_A_ * Eigen::Matrix3d::Identity();
+            P_.block<3, 3>(kBaB, kBaB) = init_sigma_ba_B_ * init_sigma_ba_B_ * Eigen::Matrix3d::Identity();
+        }
     }
 
     void initializeFromParams()
@@ -309,6 +423,8 @@ private:
         R_ = eulerZYXDegToRot(init_yaw_deg_, init_pitch_deg_, init_roll_deg_);
         v_.setZero();
         p_ = Eigen::Vector3d(init_p_x_, init_p_y_, init_p_z_);
+        initializeBiases();
+        resetCovariance();
         initialized_ = true;
         has_last_imu_pair_time_ = false;
         ROS_WARN("ESKF使用参数初始化：p=[%.3f %.3f %.3f], yaw/pitch/roll=[%.2f %.2f %.2f] deg",
@@ -355,6 +471,7 @@ private:
         v_.setZero();
         initialized_ = true;
         has_last_imu_pair_time_ = false;
+        initializeBiases();
         resetCovariance();
 
         ROS_WARN("ESKF已用初始位姿话题初始化：%s", init_pose_topic_.c_str());
@@ -362,17 +479,13 @@ private:
 
     void mocapCallback(const geometry_msgs::PoseStamped::ConstPtr &msg)
     {
+        // Simulation truth is already ^A R_B and ^A p_AB. No mocap-frame conversion is allowed here.
         const Eigen::Quaterniond q = quatFromPose(msg);
-        const Eigen::Matrix3d R_M_BM = q.toRotationMatrix();
-        const Eigen::Vector3d p_M_BM(msg->pose.position.x,
-                                     msg->pose.position.y,
-                                     msg->pose.position.z);
+        const Eigen::Matrix3d R_A_B = q.toRotationMatrix();
+        const Eigen::Vector3d p_A_B(msg->pose.position.x,
+                                    msg->pose.position.y,
+                                    msg->pose.position.z);
 
-        const Eigen::Matrix4d T_A_B = computeMocapTruth_T_A_B_AssumeMEqualsAM(R_M_BM, p_M_BM);
-        const Eigen::Matrix3d R_A_B = T_A_B.block<3, 3>(0, 0);
-        const Eigen::Vector3d p_A_B = T_A_B.block<3, 1>(0, 3);
-
-        // 缓存最新动捕真值，由50 Hz定时器统一发布
         latest_mocap_truth_R_ = R_A_B;
         latest_mocap_truth_p_ = p_A_B;
         has_mocap_truth_ = true;
@@ -384,8 +497,9 @@ private:
             v_.setZero();
             initialized_ = true;
             has_last_imu_pair_time_ = false;
+            initializeBiases();
             resetCovariance();
-            ROS_WARN("ESKF已用动捕真值初始化。该模式只建议用于调试，不建议作为正式实验结果。 ");
+            ROS_WARN("ESKF initialized from direct simulation truth; use only for debugging.");
         }
     }
 
@@ -419,61 +533,75 @@ private:
             return;
         }
 
-        const Eigen::Vector3d omega_A = vec3FromImuAngular(imu_a);
-        const Eigen::Vector3d omega_B = vec3FromImuAngular(imu_b);
-        const Eigen::Vector3d f_A = vec3FromImuLinearAcc(imu_a);
-        const Eigen::Vector3d f_B = vec3FromImuLinearAcc(imu_b);
+        Eigen::Vector3d omega_A = vec3FromImuAngular(imu_a);
+        Eigen::Vector3d omega_B = vec3FromImuAngular(imu_b);
+        Eigen::Vector3d f_A = vec3FromImuLinearAcc(imu_a);
+        Eigen::Vector3d f_B = vec3FromImuLinearAcc(imu_b);
+        if (sim_inject_imu_bias_)
+        {
+            omega_A += sim_bg_A_;
+            omega_B += sim_bg_B_;
+            f_A += sim_ba_A_;
+            f_B += sim_ba_B_;
+        }
+        if (!omega_A.allFinite() || !omega_B.allFinite() ||
+            !f_A.allFinite() || !f_B.allFinite())
+        {
+            ROS_WARN_THROTTLE(2.0, "IMU输入包含NaN/Inf，跳过本次传播");
+            return;
+        }
 
         ros::WallTime t_predict_start = ros::WallTime::now();
         propagate(omega_A, omega_B, f_A, f_B, dt);
         ros::WallDuration predict_elapsed = ros::WallTime::now() - t_predict_start;
-        ROS_INFO("[ESKF计时] 预测(propagate) 耗时: %.3f ms, dt=%.3f ms",
+        ROS_INFO_THROTTLE(1.0, "[ESKF计时] 预测(propagate) 耗时: %.3f ms, dt=%.3f ms",
                  predict_elapsed.toSec() * 1e3, dt * 1e3);
     }
 
-    void propagate(const Eigen::Vector3d &omega_A,
-                   const Eigen::Vector3d &omega_B,
-                   const Eigen::Vector3d &f_A,
-                   const Eigen::Vector3d &f_B,
+    void propagate(const Eigen::Vector3d &omega_A_meas,
+                   const Eigen::Vector3d &omega_B_meas,
+                   const Eigen::Vector3d &f_A_meas,
+                   const Eigen::Vector3d &f_B_meas,
                    double dt)
     {
+        // 去偏置后的输入同时用于名义传播和F/G；不得只在其中一处扣除。
+        const Eigen::Vector3d omega_A = omega_A_meas - bg_A_;
+        const Eigen::Vector3d omega_B = omega_B_meas - bg_B_;
+        const Eigen::Vector3d f_A = f_A_meas - ba_A_;
+        const Eigen::Vector3d f_B = f_B_meas - ba_B_;
         const Eigen::Matrix3d R_old = R_;
         const Eigen::Vector3d v_old = v_;
         const Eigen::Vector3d p_old = p_;
 
         // 名义状态传播。
-        R_ = expSO3(-omega_A * dt) * R_ * expSO3(omega_B * dt);
+        R_ = expSO3(-omega_A * dt) * R_old * expSO3(omega_B * dt);
         normalizeRotation();
 
         v_ = v_old + (-skew(omega_A) * v_old + R_old * f_B - f_A) * dt;
         p_ = p_old + (-skew(omega_A) * p_old + v_old) * dt;
 
         // 误差状态协方差传播：xi_dot = F xi + G n。
-        const Eigen::Matrix3d Omega_A = skew(omega_A);
-        Matrix9d F = Matrix9d::Zero();
-        F.block<3, 3>(0, 0) = -Omega_A;
-        F.block<3, 3>(3, 0) = -skew(R_old * f_B);
-        F.block<3, 3>(3, 3) = -Omega_A;
-        F.block<3, 3>(6, 3) = Eigen::Matrix3d::Identity();
-        F.block<3, 3>(6, 6) = -Omega_A;
+        Matrix21d F;
+        Matrix21x24d G;
+        buildErrorDynamics(R_old, v_old, p_old, omega_A, f_B, F, G);
 
-        Matrix9x12d G = Matrix9x12d::Zero();
-        G.block<3, 3>(0, 0) = Eigen::Matrix3d::Identity();
-        G.block<3, 3>(0, 3) = -R_old;
-        G.block<3, 3>(3, 0) = -skew(v_old);
-        G.block<3, 3>(3, 6) = Eigen::Matrix3d::Identity();
-        G.block<3, 3>(3, 9) = -R_old;
-        G.block<3, 3>(6, 0) = -skew(p_old);
-
-        Matrix12d Qc = Matrix12d::Zero();
+        Matrix24d Qc = Matrix24d::Zero();
         Qc.block<3, 3>(0, 0) = sigma_gyro_A_ * sigma_gyro_A_ * Eigen::Matrix3d::Identity();
         Qc.block<3, 3>(3, 3) = sigma_gyro_B_ * sigma_gyro_B_ * Eigen::Matrix3d::Identity();
         Qc.block<3, 3>(6, 6) = sigma_acc_A_ * sigma_acc_A_ * Eigen::Matrix3d::Identity();
         Qc.block<3, 3>(9, 9) = sigma_acc_B_ * sigma_acc_B_ * Eigen::Matrix3d::Identity();
+        if (estimate_imu_bias_)
+        {
+            Qc.block<3, 3>(12, 12) = sigma_bg_A_ * sigma_bg_A_ * Eigen::Matrix3d::Identity();
+            Qc.block<3, 3>(15, 15) = sigma_bg_B_ * sigma_bg_B_ * Eigen::Matrix3d::Identity();
+            Qc.block<3, 3>(18, 18) = sigma_ba_A_ * sigma_ba_A_ * Eigen::Matrix3d::Identity();
+            Qc.block<3, 3>(21, 21) = sigma_ba_B_ * sigma_ba_B_ * Eigen::Matrix3d::Identity();
+        }
 
-        const Matrix9d Phi = Matrix9d::Identity() + F * dt;
-        const Matrix9d Qd = G * Qc * G.transpose() * dt;
-        P_ = Phi * P_ * Phi.transpose() + Qd;
+        const Matrix21d Phi = Matrix21d::Identity() + F * dt;
+        const Matrix21d Qd = G * Qc * G.transpose() * dt;
+        P_ = (Phi * P_ * Phi.transpose() + Qd).eval();
+        // 随机游走的名义均值不加随机数；不确定性通过Qc进入P。
         symmetrizeCovariance();
     }
 
@@ -557,7 +685,7 @@ private:
         ros::WallTime t_start = ros::WallTime::now();
 
         const int max_rows = static_cast<int>(tag_ids_.size() * anchor_ids_.size());
-        Eigen::MatrixXd H(max_rows, 9);
+        Eigen::MatrixXd H(max_rows, kErrorSize);
         Eigen::VectorXd H_fake_height(max_rows);
         Eigen::VectorXd r(max_rows);
         H.setZero();
@@ -607,9 +735,13 @@ private:
                 if (use_uwb_fake_height_)
                 {
                     /*
-                     * 真实误差状态保留完整姿态、速度交叉项和p_x、p_y更新；
-                     * u_z进入本批次独立的假高度delta_h_fake。假高度通过
-                     * Schur补消去，不会注入真实p_z。
+                     * 真实误差状态只保留 p_x、p_y 的UWB雅可比。
+                     * u_z 被放入本批次独立的假高度 delta_h_fake：
+                     *
+                     *   residual = H_x delta_x + H_fake delta_h_fake + noise.
+                     *
+                     * 假高度会在 updateUwbWithFakeHeight() 中通过Schur补消去，
+                     * 因而不会进入真实 p_z；真实高度继续由IMU传播和ToF更新。
                      */
                     H.block<1, 2>(row, 6) = u.head<2>().transpose();
                     H(row, 8) = 0.0;
@@ -617,7 +749,6 @@ private:
                 }
                 else
                 {
-                    // 关闭假高度时恢复普通UWB完整位姿更新。
                     H.block<1, 3>(row, 6) = u.transpose();
                 }
                 r(row) = residual;
@@ -636,6 +767,8 @@ private:
         r.conservativeResize(row);
 
         Eigen::MatrixXd Rm = sigma_uwb_ * sigma_uwb_ * Eigen::MatrixXd::Identity(row, row);
+        ROS_INFO_THROTTLE(1.0, "[UWB update] sigma_uwb_=%.6f, variance=%.6f, row=%d",
+                          sigma_uwb_, sigma_uwb_ * sigma_uwb_, row);
         if (use_uwb_fake_height_)
         {
             updateUwbWithFakeHeight(H, H_fake_height, r, Rm);
@@ -656,16 +789,25 @@ private:
                                  const Eigen::MatrixXd &Rm)
     {
         /*
-         * 先使用Rm = L L^T白化测量：
-         *   r_w = L^-1 r, H_w = L^-1 H_x, h_w = L^-1 H_fake.
+         * 对一般测量协方差 Rm 先白化：
          *
-         * 再投影到假高度雅可比h_w的正交补：
-         *   Pi = I - h_w (h_w^T h_w)^-1 h_w^T.
+         *   r_w = L^{-1} r, H_w = L^{-1} H_x, h_w = L^{-1} H_fake,
+         *   Rm = L L^T.
          *
-         * 这样等价于联合求解真实误差状态和本批次假高度，再通过
-         * Schur补消去假高度；假高度不会成为持久状态，也不会注入真实p_z。
+         * 再投影到 h_w 的正交补：
+         *
+         *   Pi = I - h_w (h_w^T h_w)^{-1} h_w^T.
+         *
+         * 因此 H_perp = Pi H_w、r_perp = Pi r_w，实际投影噪声协方差为Pi。
+         * 下方用I构造等价更新：H_perp和r_perp在被消去方向都为零，
+         * 该方向不会贡献状态信息；有效正交子空间内的噪声协方差为I。
+         * 这与文档中的
+         *   W_perp = W - W H_fake
+         *              (H_fake^T W H_fake)^{-1} H_fake^T W
+         * 完全等价，但不需要显式求 Rm^{-1}。
          */
         if (H_x.rows() == 0 ||
+            H_x.cols() != kErrorSize ||
             H_fake_height.size() != H_x.rows() ||
             r.size() != H_x.rows() ||
             Rm.rows() != H_x.rows() ||
@@ -691,9 +833,8 @@ private:
             fake_height_information < uwb_fake_height_min_information_)
         {
             /*
-             * 当前几何对竖直位移几乎不敏感，无法可靠估计假高度。
-             * 此时退化为使用已经删除真实p_z列的UWB更新，并继续禁止
-             * UWB向真实p_z注入修正。
+             * 当前几何对竖直位移几乎不敏感，无法估计假高度。
+             * 此时直接使用已经去掉真实 p_z 列的 H_x，并继续禁止注入 p_z。
              */
             ROS_WARN_THROTTLE(
                 2.0,
@@ -712,11 +853,11 @@ private:
         const Eigen::MatrixXd R_perp =
             Eigen::MatrixXd::Identity(H_x.rows(), H_x.rows());
 
-        const Vector9d dx =
+        const Vector21d dx =
             measurementUpdate(H_perp, r_perp, R_perp,
                               MeasurementMode::UWB_FAKE_HEIGHT);
 
-        // 仅用于诊断输出；该临时量不进入真实状态。
+        // 给定位姿修正后，剩余残差中最能由竖直位移解释的临时假高度。
         const double delta_h_fake =
             h_w.dot(r_w - H_w * dx) / fake_height_information;
 
@@ -737,7 +878,7 @@ private:
         if (!std::isfinite(z) || z <= 0.0)
             return;
 
-        Eigen::Matrix<double, 1, 9> H;
+        Eigen::Matrix<double, 1, kErrorSize> H;
         H.setZero();
         double z_hat = 0.0;
 
@@ -746,7 +887,8 @@ private:
 
         if (tof_vertical_mode_)
         {
-            // 当前/ground_distance的point.y已经是垂直高度时，用这个简化观测更稳。(point.y=d_{tof}*cos(pitch)*cos(roll))
+            // point.y必须是到A系平台平面的法向高度。
+            // 用世界系roll/pitch计算d*cos(pitch)*cos(roll)，要求平台水平。
             z_hat = e3.transpose() * (p_ + Rc);
             H.block<1, 3>(0, 0) = -e3.transpose() * skew(Rc);
             // H.block<1, 3>(0, 0).setZero();   // 先不要让ToF修正姿态
@@ -771,6 +913,9 @@ private:
             H.block<1, 3>(0, 6) = -(1.0 / beta) * e3.transpose();
         }
 
+        if (!std::isfinite(z_hat) || z_hat <= 0.0)
+            return; // 无正向有效交点时不使用斜距/高度更新。
+
         const double residual = z - z_hat;
         ROS_INFO("ToF: measured=%.4f m, predicted=%.4f m, residual=%.4f m, p_z=%.4f m, Rc_z=%.4f m",
                  z, z_hat, residual, p_.z(), Rc.z());
@@ -779,7 +924,7 @@ private:
 
         Eigen::VectorXd r(1);
         r(0) = residual;
-        Eigen::MatrixXd Hdyn(1, 9);
+        Eigen::MatrixXd Hdyn(1, kErrorSize);
         Hdyn.row(0) = H;
         Eigen::MatrixXd Rm(1, 1);
         Rm(0, 0) = sigma_tof_ * sigma_tof_;
@@ -799,6 +944,7 @@ private:
         if (initialized_)
         {
             publishEstimate(stamp);
+            publishBiases(stamp);
         }
 
         if (has_mocap_truth_)
@@ -818,17 +964,18 @@ private:
         TOF_Z_VZ_ONLY
     };
 
-    Vector9d measurementUpdate(const Eigen::MatrixXd &H,
+    Vector21d measurementUpdate(const Eigen::MatrixXd &H,
                                const Eigen::VectorXd &r,
                                const Eigen::MatrixXd &Rm,
                                MeasurementMode mode = MeasurementMode::FULL)
     {
-        const Vector9d zero_dx = Vector9d::Zero();
+        const Vector21d zero_dx = Vector21d::Zero();
         if (H.rows() == 0 ||
-            H.cols() != 9 ||
+            H.cols() != kErrorSize ||
             r.size() != H.rows() ||
             Rm.rows() != H.rows() ||
-            Rm.cols() != H.rows())
+            Rm.cols() != H.rows() ||
+            !H.allFinite() || !r.allFinite() || !Rm.allFinite())
         {
             ROS_ERROR_THROTTLE(2.0, "ESKF测量更新维度不一致，跳过本批次");
             return zero_dx;
@@ -836,11 +983,12 @@ private:
 
         ros::WallTime t_update_start = ros::WallTime::now();
 
-        const Matrix9d I9 = Matrix9d::Identity();
+        const Matrix21d I21 = Matrix21d::Identity();
         const Eigen::MatrixXd S = H * P_ * H.transpose() + Rm;
 
         Eigen::LDLT<Eigen::MatrixXd> ldlt(S);
-        if (ldlt.info() != Eigen::Success)
+        if (ldlt.info() != Eigen::Success || !ldlt.isPositive() ||
+            !ldlt.vectorD().allFinite() || (ldlt.vectorD().array() <= 0.0).any())
         {
             ROS_ERROR_THROTTLE(2.0, "ESKF创新协方差LDLT分解失败，跳过本批次");
             return zero_dx;
@@ -855,7 +1003,7 @@ private:
         }
 
         Eigen::MatrixXd K =
-            Eigen::MatrixXd::Zero(9, H.rows());
+            Eigen::MatrixXd::Zero(kErrorSize, H.rows());
 
         if (mode == MeasurementMode::FULL)
         {
@@ -864,33 +1012,49 @@ private:
         else if (mode == MeasurementMode::UWB_FAKE_HEIGHT)
         {
             /*
-             * UWB仍可通过完整卡尔曼增益修正姿态、速度以及p_x、p_y，
-             * 但严格禁止向真实p_z注入修正。竖直方向残差由本批次
-             * delta_h_fake承担并在更新后丢弃。
+             * 保留当前代码原有的UWB更新能力（姿态、速度、p_x、p_y可通过
+             * 直接观测或协方差交叉项得到修正），但严格禁止UWB注入真实p_z。
+             * 偏置行仍允许通过交叉协方差修正。
+             * K.row(8)=0只保证本次真实p_z不变；更新后的速度/偏置
+             * 仍可影响后续IMU高度传播。临时假高度在本次更新后丢弃。
              */
             K = K_full;
             K.row(8).setZero();
         }
         else if (mode == MeasurementMode::UWB_XY_ONLY)
         {
-            // UWB严格只修改p_x、p_y
+            // 旧的严格限制模式：只改p_x、p_y，也冻结所有偏置。
             K.row(6) = K_full.row(6);
             K.row(7) = K_full.row(7);
         }
         else if (mode == MeasurementMode::TOF_Z_VZ_ONLY)
         {
-            // ToF修改v_z和p_z
+            // 旧的严格限制模式：只改v_z、p_z，也冻结所有偏置。
             K.row(5) = K_full.row(5);
             K.row(8) = K_full.row(8);
         }
 
-        const Vector9d dx = K * r;
+        if (!estimate_imu_bias_)
+            K.bottomRows<12>().setZero();
 
-        const Matrix9d IKH = I9 - K * H;
-        P_ = IKH * P_ * IKH.transpose()
-             + K * Rm * K.transpose();
+        const Vector21d dx = K * r;
+        if (!dx.allFinite())
+            return zero_dx;
 
+        const Matrix21d IKH = I21 - K * H;
+        const Matrix21d P_updated = IKH * P_ * IKH.transpose()
+                                    + K * Rm * K.transpose();
+        if (!P_updated.allFinite())
+            return zero_dx;
+
+        P_ = P_updated;
         injectError(dx);
+        // 左乘误差：Exp(dtheta_new) = Exp(dtheta_old) Exp(-dtheta_hat)。
+        // J_theta = I + 0.5*[dtheta_hat]x + O(||dtheta_hat||^2)。
+        // 加法速度/位置/偏置块均为I；交叉协方差也必须一起重置。
+        Matrix21d J_reset = Matrix21d::Identity();
+        J_reset.block<3, 3>(0, 0) += 0.5 * skew(dx.segment<3>(0));
+        P_ = (J_reset * P_ * J_reset.transpose()).eval();
         symmetrizeCovariance();
 
         ros::WallDuration update_elapsed = ros::WallTime::now() - t_update_start;
@@ -900,7 +1064,7 @@ private:
         return dx;
     }
 
-    void injectError(const Vector9d &dx)
+    void injectError(const Vector21d &dx)
     {
         const Eigen::Vector3d dtheta = dx.segment<3>(0);
         const Eigen::Vector3d dv = dx.segment<3>(3);
@@ -910,11 +1074,34 @@ private:
         normalizeRotation();
         v_ += dv;
         p_ += dp;
+        bg_A_ += dx.segment<3>(kBgA);
+        bg_B_ += dx.segment<3>(kBgB);
+        ba_A_ += dx.segment<3>(kBaA);
+        ba_B_ += dx.segment<3>(kBaB);
     }
 
     void symmetrizeCovariance()
     {
-        P_ = 0.5 * (P_ + P_.transpose());
+        P_ = (0.5 * (P_ + P_.transpose())).eval();
+    }
+
+    void publishBiases(const ros::Time &stamp)
+    {
+        geometry_msgs::Vector3Stamped msg;
+        msg.header.stamp = stamp.isZero() ? ros::Time::now() : stamp;
+        const auto publish = [&](ros::Publisher &pub, const Eigen::Vector3d &bias,
+                                 const std::string &body_frame)
+        {
+            msg.header.frame_id = body_frame;
+            msg.vector.x = bias.x();
+            msg.vector.y = bias.y();
+            msg.vector.z = bias.z();
+            pub.publish(msg);
+        };
+        publish(bias_bg_A_pub_, bg_A_, frame_id_);         // rad/s, in A
+        publish(bias_bg_B_pub_, bg_B_, body_frame_id_B_); // rad/s, in B
+        publish(bias_ba_A_pub_, ba_A_, frame_id_);         // m/s^2, in A
+        publish(bias_ba_B_pub_, ba_B_, body_frame_id_B_); // m/s^2, in B
     }
 
     //发布估计的位姿
@@ -975,12 +1162,15 @@ private:
     std::string mocap_truth_topic_;
     std::string init_pose_topic_;
     std::string frame_id_;
+    std::string body_frame_id_B_;
     double publish_rate_hz_;
 
     bool init_from_pose_topic_;
     bool init_from_mocap_;
     bool tof_vertical_mode_;
     bool use_uwb_fake_height_;
+    bool estimate_imu_bias_;
+    bool sim_inject_imu_bias_;
 
     int imu_queue_size_;
     double imu_sync_slop_;
@@ -990,6 +1180,7 @@ private:
     double sigma_gyro_B_;
     double sigma_acc_A_;
     double sigma_acc_B_;
+    double sigma_bg_A_, sigma_bg_B_, sigma_ba_A_, sigma_ba_B_;
     double sigma_uwb_;
     double sigma_tof_;
     double uwb_residual_gate_;
@@ -1005,11 +1196,18 @@ private:
     double init_sigma_angle_;
     double init_sigma_velocity_;
     double init_sigma_position_;
+    double init_sigma_bg_A_, init_sigma_bg_B_, init_sigma_ba_A_, init_sigma_ba_B_;
+    Eigen::Vector3d init_bg_A_, init_bg_B_, init_ba_A_, init_ba_B_;
+    Eigen::Vector3d sim_bg_A_, sim_bg_B_, sim_ba_A_, sim_ba_B_;
 
     Eigen::Matrix3d R_ = Eigen::Matrix3d::Identity();
     Eigen::Vector3d v_ = Eigen::Vector3d::Zero();
     Eigen::Vector3d p_ = Eigen::Vector3d::Zero();
-    Matrix9d P_ = Matrix9d::Identity();
+    Eigen::Vector3d bg_A_ = Eigen::Vector3d::Zero();
+    Eigen::Vector3d bg_B_ = Eigen::Vector3d::Zero();
+    Eigen::Vector3d ba_A_ = Eigen::Vector3d::Zero();
+    Eigen::Vector3d ba_B_ = Eigen::Vector3d::Zero();
+    Matrix21d P_ = Matrix21d::Identity();
 
     bool has_mocap_truth_ = false;//保存最新的动捕真值
     Eigen::Matrix3d latest_mocap_truth_R_ = Eigen::Matrix3d::Identity();
@@ -1038,6 +1236,7 @@ private:
     ros::Subscriber init_pose_sub_;
     ros::Publisher pose_pub_;
     ros::Publisher mocap_truth_pub_;
+    ros::Publisher bias_bg_A_pub_, bias_bg_B_pub_, bias_ba_A_pub_, bias_ba_B_pub_;
     ros::Timer publish_timer_;
 
     message_filters::Subscriber<sensor_msgs::Imu> imu_a_sub_;
@@ -1051,8 +1250,16 @@ int main(int argc, char **argv)
     setlocale(LC_ALL, "zh_CN.UTF-8");
     setlocale(LC_NUMERIC, "C");  // 防止小数点变成逗号
 
-    ros::init(argc, argv, "uwb_imu_tof_eskf_node");
-    UwbImuTofEskfNode node;
-    ros::spin();
+    ros::init(argc, argv, "uwb_imu_tof_eskf_sim_node");
+    try
+    {
+        UwbImuTofEskfNode node;
+        ros::spin();
+    }
+    catch (const std::exception &e)
+    {
+        ROS_FATAL("ESKF启动/运行失败: %s", e.what());
+        return 1;
+    }
     return 0;
 }

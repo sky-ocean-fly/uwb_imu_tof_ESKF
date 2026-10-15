@@ -240,7 +240,7 @@ private:
         pnh_.param<bool>("init_from_pose_topic", init_from_pose_topic_, true);
         pnh_.param<bool>("init_from_mocap", init_from_mocap_, false);
         pnh_.param<bool>("tof_vertical_mode", tof_vertical_mode_, true);
-        pnh_.param<bool>("use_uwb_fake_height", use_uwb_fake_height_, true);
+        pnh_.param<bool>("use_uwb_fake_height", use_uwb_fake_height_, false);//“假高度”
 
         pnh_.param<int>("imu_queue_size", imu_queue_size_, 100);
         pnh_.param<double>("imu_sync_slop", imu_sync_slop_, 0.01);

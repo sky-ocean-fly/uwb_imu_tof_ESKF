@@ -5,6 +5,8 @@ uwb_pose_estimation/CMakeFiles/pose_compare_logger.dir/src/pose_compare_logger.c
 uwb_pose_estimation/CMakeFiles/pose_compare_logger.dir/src/pose_compare_logger.cpp.o: /opt/ros/noetic/include/geometry_msgs/Point.h
 uwb_pose_estimation/CMakeFiles/pose_compare_logger.dir/src/pose_compare_logger.cpp.o: /opt/ros/noetic/include/geometry_msgs/Pose.h
 uwb_pose_estimation/CMakeFiles/pose_compare_logger.dir/src/pose_compare_logger.cpp.o: /opt/ros/noetic/include/geometry_msgs/PoseStamped.h
+uwb_pose_estimation/CMakeFiles/pose_compare_logger.dir/src/pose_compare_logger.cpp.o: /opt/ros/noetic/include/geometry_msgs/PoseWithCovariance.h
+uwb_pose_estimation/CMakeFiles/pose_compare_logger.dir/src/pose_compare_logger.cpp.o: /opt/ros/noetic/include/geometry_msgs/PoseWithCovarianceStamped.h
 uwb_pose_estimation/CMakeFiles/pose_compare_logger.dir/src/pose_compare_logger.cpp.o: /opt/ros/noetic/include/geometry_msgs/Quaternion.h
 uwb_pose_estimation/CMakeFiles/pose_compare_logger.dir/src/pose_compare_logger.cpp.o: /opt/ros/noetic/include/message_filters/connection.h
 uwb_pose_estimation/CMakeFiles/pose_compare_logger.dir/src/pose_compare_logger.cpp.o: /opt/ros/noetic/include/message_filters/macros.h
