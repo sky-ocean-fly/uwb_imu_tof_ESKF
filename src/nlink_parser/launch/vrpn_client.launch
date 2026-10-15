@@ -1,0 +1,21 @@
+<launch>
+  <!-- VRPN客户端节点：同时获取UWB_A和UWB_B的动捕位姿 -->
+  <node pkg="vrpn_client_ros" type="vrpn_client_node" name="vrpn_client" output="screen">
+    <!-- VRPN服务器地址 -->
+    <param name="server" value="192.168.50.208" />  <!-- 改为您的动捕服务器IP -->
+    <param name="port" value="3883" />
+
+    <!-- 更新频率 -->
+    <param name="update_frequency" value="100.0" />
+    <param name="frame_id" value="world" />
+
+    <rosparam>
+      trackers:
+        <!-- - UWB_A
+        - UWB_B -->
+        - UWB_rocket
+    </rosparam>
+
+  </node>
+
+</launch>

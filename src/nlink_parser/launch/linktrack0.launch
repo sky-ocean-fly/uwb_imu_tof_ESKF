@@ -1,0 +1,8 @@
+<launch>
+    <node pkg="nlink_parser" type="linktrack" name="linktrack0" output="screen"> 
+        <param name="port_name" value="/dev/ttyCH343USB0" />
+        <param name="baud_rate" value="921600" />
+    </node>
+</launch>
+
+<!--原本是linktrack0 和 ttyCH343USB0-->
